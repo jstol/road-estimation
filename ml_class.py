@@ -45,6 +45,9 @@ class ScikitLearnML:
 		elif (self.name == "logistic"):
 			return logistic_train(train_inputs, train_targets, self.hyperparameters_dic, model_name)
 
+		elif (self.name == "svm"):
+			return svm_train(train_inputs, train_targets, self.hyperparameters_dic, model_name)
+
 		else:
 			print("Error: unexpected ML algorithm name")
 
@@ -63,6 +66,9 @@ class ScikitLearnML:
 
 		elif (self.name == "logistic"):
 			return logistic_predict(test_inputs, self.hyperparameters_dic, model_name)
+
+		elif (self.name == "svm"):
+			return svm_predict(test_inputs, self.hyperparameters_dic, model_name)
 
 		else:
 			print("Error: unexpected ML algorithm name")
@@ -129,6 +135,36 @@ def knn_predict(test_inputs, hyperparameters_dic, model_name):
 
 
 #SVM
+def svm_train(train_inputs, train_targets, hyperparameters_dic, model_name):
+	#force our train inputs and targets to be np arrays
+	train_inputs = np.array(train_inputs)
+	train_targets = np.array(train_targets)
+
+	#unpack hyperparameters
+	kernel = hyperparameters_dic['kernel']
+	probability_flag = hyperparameters_dic['probability_flag']
+
+	#fit model
+	svm_mod = svm.SVC(kernel = kernel, probability = probability_flag)
+	svm_mod.fit(train_inputs, train_targets)
+
+	#save model
+	joblib.dump(svm_mod, (model_name+'.pkl'))
+
+def svm_predict(test_inputs, hyperparameters_dic, model_name):
+	#force test inputs to be np arrays:
+	test_inputs = np.array(test_inputs)
+
+	#unpack hyperparameters
+	kernel = hyperparameters_dic['kernel']
+	probability_flag = hyperparameters_dic['probability_flag']
+
+	#load model
+	svm_mod = joblib.load((model_name+'.pkl'))
+
+	#make predictions
+	test_pred = np.array(svm_mod.predict_proba(test_inputs))
+	return test_pred[:, 1]
 
 
 #Logistic Regression
@@ -165,33 +201,50 @@ def logistic_predict(test_inputs, hyperparameters_dic, model_name):
 
 
 
-
-#Test area
-print("Tests - knn")
-
-train_X = [[0], [1], [2], [3]]
-train_y = [0, 0, 1, 1]
-
-test_X = [[1.1], [0.9]]
-test_y = [1, 0]
+train_data = np.load('examples.npz')
+train_X = train_data['inputs']
+train_y = train_data['targets']
 
 knn_alg = ScikitLearnML('knn', {'k':3})
 knn_alg.train(train_X, train_y, 'knn_test_model.npz')
-test_pred = knn_alg.predict(test_X, 'knn_test_model.npz')
+train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
 print(test_pred)
 
-ce, class_rate = knn_alg.evaluate(test_y, test_pred, cross_entropy_flag = True)
+ce, class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
 print(ce)
 print(class_rate)
 
+np.savez('examples-predictions.npz', predictions=train_pred)
 
-print("Tests - logistic")
 
-logistic_alg = ScikitLearnML('logistic', {'penalty': 'l2', 'regularization_term':0.1})
-logistic_alg.train(train_X, train_y, 'logistic_test_model')
-test_pred = logistic_alg.predict(test_X, 'logistic_test_model')
-print(test_pred)
 
-ce, class_rate = logistic_alg.evaluate(test_y, test_pred, cross_entropy_flag = True)
-print(ce)
-print(class_rate)
+# #Test area
+# print("Tests - knn")
+
+# train_X = [[0], [1], [2], [3]]
+# train_y = [0, 0, 1, 1]
+
+# test_X = [[1.1], [0.9]]
+# test_y = [1, 0]
+
+# knn_alg = ScikitLearnML('knn', {'k':3})
+# knn_alg.train(train_X, train_y, 'knn_test_model.npz')
+# test_pred = knn_alg.predict(test_X, 'knn_test_model.npz')
+# print(test_pred)
+
+# ce, class_rate = knn_alg.evaluate(test_y, test_pred, cross_entropy_flag = True)
+# print(ce)
+# print(class_rate)
+
+
+# print("Tests - logistic")
+
+# logistic_alg = ScikitLearnML('logistic', {'penalty': 'l2', 'regularization_term':0.1})
+# logistic_alg.train(train_X, train_y, 'logistic_test_model')
+# test_pred = logistic_alg.predict(test_X, 'logistic_test_model')
+# print(test_pred)
+
+# ce, class_rate = logistic_alg.evaluate(test_y, test_pred, cross_entropy_flag = True)
+# print(ce)
+# print(class_rate)
+
