@@ -203,12 +203,14 @@ def logistic_predict(test_inputs, hyperparameters_dic, model_name):
 
 train_data = np.load('examples.npz')
 train_X = train_data['inputs']
+print(train_X.shape)
 train_y = train_data['targets']
+print(train_y.shape)
 
-knn_alg = ScikitLearnML('knn', {'k':3})
+knn_alg = ScikitLearnML('knn', {'k':10})
 knn_alg.train(train_X, train_y, 'knn_test_model.npz')
 train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
-print(test_pred)
+# print(train_pred)
 
 ce, class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
 print(ce)

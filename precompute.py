@@ -79,6 +79,8 @@ if __name__ == '__main__':
 	for i, image in enumerate(training_images):
 		example_name = path.splitext(path.basename(training_images.files[i]))[0] # ex. um_000009
 		
+		print("Processing {0}".format(example_name))
+
 		# Record this superpixels mapping		
 		superpixels = slic(image, n_segments=num_superpixels, slic_zero=True)
 		superpixel_maps[example_name] = superpixels
@@ -94,7 +96,7 @@ if __name__ == '__main__':
 			target_image = target_image[:,:,2] > 0
 
 		# Compute the examples matrix
-		superpixels_count = np.max(superpixels)
+		superpixels_count = len(np.unique(superpixels))
 		for sp in xrange(superpixels_count):
 			# Get a mask for this specific superpixel
 			superpixel = (superpixels == sp)
