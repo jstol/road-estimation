@@ -5,7 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 # Standard modules
 import argparse
-import os.path as path
+from os import path
 # Third party modules
 from skimage.segmentation import slic
 from skimage.io import imread_collection, imread
@@ -19,7 +19,7 @@ category = 'um'
 file_type = '.png'
 target_type = 'road'
 
-# Read in command line arguments
+# Set up command line arguments
 _argument_parser = argparse.ArgumentParser(
 	prog='precompute',
 	description='Script to compute superpixel maps (using SLICO) for the provided directory of images. Outputs an .npz file containing a superpixel mapping matrix for each image.'
@@ -58,8 +58,9 @@ _argument_parser.add_argument('-n', '--num-superpixels',
 )
 args = _argument_parser.parse_args()
 
-# Run app
+# Run script
 if __name__ == '__main__':
+	# Read in command line arguments
 	example_input_path = args.examples_input_path
 	targets_input_dir = args.targets_input_dir
 	generate_targets = targets_input_dir is not None
@@ -126,18 +127,3 @@ if __name__ == '__main__':
 	if generate_targets:
 		examples['targets'] = targets
 	np.savez(examples_output_file, **examples)
-
-	# a = np.array([[10,20,30],[40,60,80],[100,120,140]])
-	# superpixels_map = np.array([[1,1,2],[1,2,2],[3,3,4]])
-	# a_superpixels_map = ma.array(a, mask=(superpixels_map != 2))
-
-	# i = imread('kit/data_road/training/image_2/um_000000.png')
-	# supers = slic(i, slic_zero=True, n_segments=2)
-	# super_pixel_0 = (supers == 0)
-	# i[super_pixel_0, 0].shape
-
-	# x,y = super_pixel_0.nonzero()
-	# np.average(x)
-	# np.max(x)-np.min(x)
-
-	#(map >= 78) & (map <= 81)
