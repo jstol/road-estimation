@@ -15,7 +15,6 @@ import matplotlib.pyplot as plot
 
 _NUM_FEATURES = 7 # Avg R,G,B, delta_x, delta_y, average x, average y
 
-category = 'um'
 file_type = '.png'
 target_type = 'road'
 
@@ -89,7 +88,8 @@ if __name__ == '__main__':
 		# Read in the ground truth image if we're also computing target labels
 		if generate_targets:
 			# Generate a pattern that matches the ground truth
-			image_id = example_name.split('{0}_'.format(category))[-1].split(file_type)[0] # ex. 000009
+			image_id = example_name.split('_')[-1].split(file_type)[0] # ex. 000009
+			category = example_name.split('_')[0] # ex. um
 			target_filename = "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type) # ex. um_road_000009.png
 			# Load the image
 			target_image = imread(path.join(targets_input_dir, target_filename))
