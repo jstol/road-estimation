@@ -131,6 +131,7 @@ def knn_predict(test_inputs, hyperparameters_dic, model_name):
 
 	#make predictions
 	test_pred = np.array(neigh.predict_proba(test_inputs))
+	print(test_pred.shape)
 	return test_pred[:, 1]
 
 
@@ -202,21 +203,43 @@ def logistic_predict(test_inputs, hyperparameters_dic, model_name):
 
 
 train_data = np.load('examples.npz')
-train_X = train_data['inputs']
-print(train_X.shape)
-train_y = train_data['targets']
-print(train_y.shape)
+total_X = train_data['inputs']
+total_y = train_data['targets']
+
+N = total_X.shape[0]
+
+train_X = total_X[:int(N*0.7), :]
+train_y = total_y[:int(N*0.7), :]
+
+valid_X = total_X[int(N*0.7):, :]
+valid_y = total_y[int(N*0.7):, :]
+
+
 
 knn_alg = ScikitLearnML('knn', {'k':10})
 knn_alg.train(train_X, train_y, 'knn_test_model.npz')
+
+#evaluate on training set
 train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
-# print(train_pred)
 
-ce, class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-print(ce)
-print(class_rate)
+train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
 
-np.savez('examples-predictions.npz', predictions=train_pred)
+#evaluate on valid set
+valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
+
+valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
+
+
+np.savez('examples-train-predictions.npz', predictions=train_pred)
+np.savez('examples-valid-predictions.npz', predictions=valid_pred)
 
 
 
