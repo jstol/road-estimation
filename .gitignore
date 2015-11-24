@@ -56,3 +56,8 @@ docs/_build/
 # PyBuilder
 target/
 data_road*
+
+# data
+*.npz
+*.npy
+*.pkl
