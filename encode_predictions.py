@@ -10,6 +10,10 @@ from os import path, makedirs
 from skimage.io import imread_collection, imread, imsave
 import numpy as np
 
+category = 'um'
+file_type = '.png'
+target_type = 'road'
+
 # Set up command-line arguments
 _argument_parser = argparse.ArgumentParser(
 	prog='encode_predictions',
@@ -71,9 +75,11 @@ if __name__ == '__main__':
 	all_predictions = np.load(predictions_input_path)['predictions']
 
 	for file_id in pixel_map_files:
+		image_id = file_id.split('{0}_'.format(category))[-1].split(file_type)[0] # ex. 000009
+
 		print("Encoding image '{0}'".format(file_id))
 
-		image = imread(path.join(example_images_input_path, "{0}.png".format(file_id)))
+		image = imread(path.join(example_images_input_path, "{0}{1}".format(file_id, file_type)))
 		encoded_prediction_image = np.zeros((image.shape[0], image.shape[1]), dtype=np.float64)
 
 		superpixels_mask = pixel_maps[file_id]
@@ -90,5 +96,5 @@ if __name__ == '__main__':
 			# Encode the prediction in another image
 			encoded_prediction_image[superpixels_mask == superpixel_i] = image_predictions[superpixel_i]
 
-		imsave(path.join(encoded_overlay_output_dir, "{0}.png".format(file_id)), image)
-		imsave(path.join(encoded_output_dir, "{0}.png".format(file_id)), encoded_prediction_image) #Throws a warning?
+		imsave(path.join(encoded_overlay_output_dir, "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type)), image)
+		imsave(path.join(encoded_output_dir, "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type)), encoded_prediction_image) #Throws a warning?
