@@ -15,6 +15,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn import neural_network
 from sklearn import linear_model, decomposition, datasets #logistic regression
 from sklearn import mixture
+from sklearn.mixture import GMM
+from sknn import mlp
+import sknn
 
 #pipeline, cross validation, model selection
 from sklearn.pipeline import Pipeline
@@ -81,8 +84,8 @@ class ScikitLearnML:
 		elif (self.name == "svm"):
 			return svm_predict(test_inputs, self.hyperparameters_dic, model_name)
 
-		elif (self.name == "MoG_classifier"):
-			return mog_classifier_predict(test_inputs, self.hyperparameters_dic, model_name)
+		elif (self.name == "mog_classifier"):
+			return MoG_classifier_predict(test_inputs, self.hyperparameters_dic, model_name)
 
 		elif (self.name == "mlp"):
 			return mlp_predict(test_inputs, self.hyperparameters_dic, model_name)
@@ -140,23 +143,23 @@ def knn_predict(test_inputs, hyperparameters_dic, model_name):
 	#load model
 	model_data = np.load(model_name)
 	train_inputs = model_data['train_inputs']
-	train_targets = model_data['train_targets']
+	train_targets = model_data['train_targets'].ravel()
 
 	#fit model
 	neigh = KNeighborsClassifier(n_neighbors=k)
 	neigh.fit(train_inputs, train_targets)
 
 	#make predictions
-	test_pred = np.array(neigh.predict(test_inputs))
+	test_pred = np.array(neigh.predict_proba(test_inputs))
 	print(test_pred.shape)
-	return test_pred[:, 1]
+	return test_pred[:,1]
 
 
 #SVM
 def svm_train(train_inputs, train_targets, hyperparameters_dic, model_name):
 	#force our train inputs and targets to be np arrays
 	train_inputs = np.array(train_inputs)
-	train_targets = np.array(train_targets)
+	train_targets = np.array(train_targets).ravel()
 
 	#unpack hyperparameters
 	kernel = hyperparameters_dic['kernel'] #str: eg. 'rbf', 'poly', 'linear', 'sigmoid'
@@ -181,10 +184,10 @@ def svm_predict(test_inputs, hyperparameters_dic, model_name):
 	svm_mod = joblib.load((model_name+'.pkl'))
 
 	#make predictions
-	# if (probability_flag == True):
-	# 	test_pred = np.array(svm_mod.predict_proba(test_inputs))
-	# else:
-	test_pred = np.array(svm_mod.predict(test_inputs))
+	if (probability_flag == True):
+	 	test_pred = np.array(svm_mod.predict_proba(test_inputs))[:, 1]
+	else:
+		test_pred = np.array(svm_mod.predict(test_inputs))
 
 	return test_pred
 
@@ -193,7 +196,7 @@ def svm_predict(test_inputs, hyperparameters_dic, model_name):
 def logistic_train(train_inputs, train_targets, hyperparameters_dic, model_name):
 	#force our train inputs and targets to be np arrays
 	train_inputs = np.array(train_inputs)
-	train_targets = np.array(train_targets)
+	train_targets = np.array(train_targets).ravel()
 
 	#unpack hyperparameters:
 	penalty = hyperparameters_dic['penalty'] #str 'l1' or 'l2'
@@ -224,16 +227,25 @@ def mlp_train(train_inputs, train_targets, hyperparameters_dic, model_name):
 	train_targets = np.array(train_targets)
 
 	#unpack hyperparameters:
-	hidden_layers_tuple = hyperparameters_dic['hidden_layers_tuple'] # tuple - (#hidden_units_layer_1)
-	activation = hyperparameters_dic['activation'] #str 'logistic', 'tanh', 'relu' => appearantly tanh and relu are better
-	optimization_alg = hyperparameters_dic['optimization_alg'] #str 'l-bfg' - all data or 'adam' - batch - default 200
-	L2_reg_alpha = hyperparameters_dic['L2_reg_alpha'] #L2 regularization term
-	learning_rate_type = hyperparameters_dic['learning_rate_type'] #'constant','invscaling' - decreasing, 'adaptive' - only used for sgd
-	random_state = hyperparameters_dic['random_state'] #int - initialization
-	learning_rate_init = hyperparameters_dic['learning_rate_init'] #double
+	# hidden_layers_tuple = hyperparameters_dic['hidden_layers_tuple'] # tuple - (#hidden_units_layer_1)
+	# activation = hyperparameters_dic['activation'] #str 'logistic', 'tanh', 'relu' => appearantly tanh and relu are better
+	# optimization_alg = hyperparameters_dic['optimization_alg'] #str 'l-bfg' - all data or 'adam' - batch - default 200
+	# L2_reg_alpha = hyperparameters_dic['L2_reg_alpha'] #L2 regularization term
+	#learning_rate_type = hyperparameters_dic['learning_rate_type'] #'constant','invscaling' - decreasing, 'adaptive' - only used for sgd
+	#random_state = hyperparameters_dic['random_state'] #int - initialization
+	#learning_rate_init = hyperparameters_dic['learning_rate_init'] #double
 
 	#fit model
-	mlp_model = neural_network.MLPClassifier(hidden_layer_sizes = hidden_layers_tuple, activation = activation, algorithm = optimization_alg, alpha = L2_reg_alpha)
+	#temp code
+	hidden_layer_1 = mlp.Layer(type = 'Tanh', units = 100, weight_decay = 0.01)
+	#hidden_layer_2 = mlp.Layer(type = 'Tanh', units = 10, weight_decay = 0.01)
+	#hidden_layer_3 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
+	output_layer = mlp.Layer(type = 'Softmax')
+
+	list_of_layers = [hidden_layer_1, output_layer]
+
+
+	mlp_model = mlp.Classifier(layers = list_of_layers)
 	mlp_model.fit(train_inputs, train_targets)
 
 	#save model
@@ -248,28 +260,31 @@ def mlp_predict(test_inputs, hyperparameters_dic, model_name):
 	mlp_model = joblib.load((model_name+'.pkl'))
 
 	#make predictions
-	test_pred = np.array(mlp.predict_proba(test_inputs))
+	test_pred = np.array(mlp_model.predict_proba(test_inputs))
 	return test_pred[:, 1]
 
 #Mixture of Gaussian Classifier
 def MoG_classifier_train(train_inputs, train_targets, hyperparameters_dic, model_name):
 	#force our train inputs and targets to be np arrays
 	train_inputs = np.array(train_inputs)
-	train_targets = np.array(train_targets)
+	train_targets = np.array(train_targets).ravel()
 
 	#unpack hyperparameters:
 	n_components = hyperparameters_dic['n_components']
-	prior_class_1 = hyperparameters_dic['prior_class_1']
 
 
 	#fit model
 	MoG_class_0 = mixture.GMM(n_components = n_components)
 	MoG_class_1 = mixture.GMM(n_components = n_components)
 
-	MoG_class_0 = GMM.fit(train_inputs[train_targets == 0, :])
-	MoG_class_1 = GMM.fit(train_inputs[train_targets == 0, :])
+	train_targets_ravel=train_targets.ravel()
 
-	MoG_classifier = {'MoG_class_0': MoG_class_0, 'MoG_class_1': MoG_class_1}
+	MoG_class_0.fit(train_inputs[train_targets_ravel == 0])
+	MoG_class_1.fit(train_inputs[train_targets_ravel == 1])
+
+	prior_class_1 = np.array(sum(train_targets))/float(train_targets.shape[0])
+
+	MoG_classifier = {'MoG_class_0': MoG_class_0, 'MoG_class_1': MoG_class_1, 'prior_class_1': prior_class_1}
 	
 	#save model
 	joblib.dump(MoG_classifier, (model_name+'.pkl'))
@@ -280,12 +295,12 @@ def MoG_classifier_predict(test_inputs, hyperparameters_dic, model_name):
 
 	#unpack hyperparameters:
 	n_components = hyperparameters_dic['n_components']
-	prior_class_1 = hyperparameters_dic['prior_class_1']
 
 	#load model
 	MoG_classifier = joblib.load((model_name+'.pkl'))
 	MoG_class_0 = MoG_classifier['MoG_class_0']
 	MoG_class_1 = MoG_classifier['MoG_class_1']
+	prior_class_1 = MoG_classifier['prior_class_1']
 
 	#make predictions
 	class_0_logp = np.array(MoG_class_0.score(test_inputs))
@@ -296,6 +311,9 @@ def MoG_classifier_predict(test_inputs, hyperparameters_dic, model_name):
 	p_x_cond_class1 = np.exp(class_1_logp)
 
 	p_class1_cond_x = np.divide((p_x_cond_class1)*prior_class_1, (p_x_cond_class1)*prior_class_1+(p_x_cond_class0)*(1-prior_class_1))
+	p_class0_cond_x = np.divide((p_x_cond_class0)*(1-prior_class_1), (p_x_cond_class1)*prior_class_1+(p_x_cond_class0)*(1-prior_class_1))
+
+	#assert(np.sum(p_class1_cond_x+p_class0_cond_x) = p_class1_cond_x.shape[0])
 
 	return p_class1_cond_x
 
@@ -310,6 +328,14 @@ train_data = np.load('examples.npz')
 total_X = train_data['inputs']
 total_y = train_data['targets']
 
+#normalize the value of features to be between -1 to 1
+total_X_temp = np.zeros(total_X.shape)
+
+for j in xrange(total_X.shape[1]):
+	total_X_temp[:, j] = (total_X[:, j] - np.mean(total_X[:, j]))/float((np.amax(total_X[:, j])-np.amin(total_X[:, j])))
+
+total_X = total_X_temp
+
 N = total_X.shape[0]
 
 train_X = total_X[:int(N*0.7), :]
@@ -318,63 +344,130 @@ train_y = total_y[:int(N*0.7), :]
 valid_X = total_X[int(N*0.7):, :]
 valid_y = total_y[int(N*0.7):, :]
 
+print('==================================')
 
-def run_knn():
-	print('running KNN...')
+print('running KNN...')
 
-	knn_alg = ScikitLearnML('knn', {'k':10})
-	knn_alg.train(train_X, train_y, 'knn_test_model.npz')
+knn_alg = ScikitLearnML('knn', {'k':10})
+knn_alg.train(train_X, train_y, 'knn_test_model.npz')
+
+#evaluate on training set
+train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
+
+train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
+
+#evaluate on valid set
+valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
+
+valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
+
+
+np.savez('examples-train-predictions-knn.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-knn.npz', predictions=valid_pred)
+
+print('==================================')
+
+print('running logistic...')
+
+logistic_alg = ScikitLearnML('logistic', {'penalty': 'l2', 'regularization_term':0.1})
+logistic_alg.train(train_X, train_y, 'logistic_test_model.npz')
+
+#evaluate on training set
+train_pred = logistic_alg.predict(train_X, 'logistic_test_model.npz')
+
+train_ce, train_class_rate = logistic_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
+
+#evaluate on valid set
+valid_pred = logistic_alg.predict(valid_X, 'logistic_test_model.npz')
+
+valid_ce, valid_class_rate = logistic_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
+
+
+np.savez('examples-train-predictions-logistic.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-logistic.npz', predictions=valid_pred)
+
+
+print('==================================')
+
+print('running neural net classifier...')
+
+mlp_alg = ScikitLearnML('mlp', {'xxx': 0})
+mlp_alg.train(train_X, train_y, 'mlp_test_model.npz')
+
+print('finished training...')
+
+#evaluate on training set
+train_pred = mlp_alg.predict(train_X, 'mlp_test_model.npz')
+
+train_ce, train_class_rate = mlp_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
+
+#evaluate on valid set
+valid_pred = mlp_alg.predict(valid_X, 'mlp_test_model.npz')
+
+valid_ce, valid_class_rate = mlp_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
+
+
+np.savez('examples-train-predictions-mlp.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-mlp.npz', predictions=valid_pred)
+
+
+print('==================================')
+
+def run_mog():
+	print('running MoG_classifier...')
+
+	mog_alg = ScikitLearnML('mog_classifier', {'n_components': 20})
+	mog_alg.train(train_X, train_y, 'mog_test_model.npz')
+
+	print('finished training...')
 
 	#evaluate on training set
-	train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
+	train_pred = mog_alg.predict(train_X, 'mog_test_model.npz')
 
-	train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	train_ce, train_class_rate = mog_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
 	print("training CE:")
 	print(train_ce)
 	print("training classification rate:")
 	print(train_class_rate)
 
 	#evaluate on valid set
-	valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
+	valid_pred = mog_alg.predict(valid_X, 'mog_test_model.npz')
 
-	valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	valid_ce, valid_class_rate = mog_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
 	print("validation CE:")
 	print(valid_ce)
 	print("validation classification rate:")
 	print(valid_class_rate)
 
 
-	np.savez('examples-train-predictions-knn.npz', predictions=train_pred)
-	np.savez('examples-valid-predictions-knn.npz', predictions=valid_pred)
+	np.savez('examples-train-predictions-mog.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-mog.npz', predictions=valid_pred)
 
-
-def run_logistc():
-	print('running logistic...')
-
-	logistic_alg = ScikitLearnML('logistic', {'penalty': 'l2', 'regularization_term':0.1})
-	logistic_alg.train(train_X, train_y, 'logistic_test_model.npz')
-
-	#evaluate on training set
-	train_pred = logistic_alg.predict(train_X, 'logistic_test_model.npz')
-
-	train_ce, train_class_rate = logistic_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-	print("training CE:")
-	print(train_ce)
-	print("training classification rate:")
-	print(train_class_rate)
-
-	#evaluate on valid set
-	valid_pred = logistic_alg.predict(valid_X, 'logistic_test_model.npz')
-
-	valid_ce, valid_class_rate = logistic_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-	print("validation CE:")
-	print(valid_ce)
-	print("validation classification rate:")
-	print(valid_class_rate)
-
-
-	np.savez('examples-train-predictions-logistic.npz', predictions=train_pred)
-	np.savez('examples-valid-predictions-logistic.npz', predictions=valid_pred)
+	print('==================================')
 
 def run_svm():
 	print('running svm...')
@@ -383,32 +476,32 @@ def run_svm():
 	svm_alg.train(train_X, train_y, 'svm_test_model.npz')
 	print('finished training...')
 
-svm_alg = ScikitLearnML('svm', {'kernel': "rbf", 'probability_flag': False})
+	svm_alg = ScikitLearnML('svm', {'kernel': "rbf", 'probability_flag': False})
 
-#evaluate on training set
-print('start predicting...')
-train_pred = svm_alg.predict(train_X, 'svm_test_model.npz')
-print('finished predicting on training...')
+	#evaluate on training set
+	print('start predicting...')
+	train_pred = svm_alg.predict(train_X, 'svm_test_model.npz')
+	print('finished predicting on training...')
 
-train_ce, train_class_rate = svm_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-print("training CE:")
-print(train_ce)
-print("training classification rate:")
-print(train_class_rate)
+	train_ce, train_class_rate = svm_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	print("training CE:")
+	print(train_ce)
+	print("training classification rate:")
+	print(train_class_rate)
 
-#evaluate on valid set
-valid_pred = svm_alg.predict(valid_X, 'svm_test_model.npz')
-print('finished predicting on validation...')
+	#evaluate on valid set
+	valid_pred = svm_alg.predict(valid_X, 'svm_test_model.npz')
+	print('finished predicting on validation...')
 
-valid_ce, valid_class_rate = svm_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-print("validation CE:")
-print(valid_ce)
-print("validation classification rate:")
-print(valid_class_rate)
+	valid_ce, valid_class_rate = svm_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	print("validation CE:")
+	print(valid_ce)
+	print("validation classification rate:")
+	print(valid_class_rate)
 
 
-np.savez('examples-train-predictions-svm.npz', predictions=train_pred)
-np.savez('examples-valid-predictions-svm.npz', predictions=valid_pred)
+	np.savez('examples-train-predictions-svm.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-svm.npz', predictions=valid_pred)
 
 
 
