@@ -18,6 +18,10 @@ from sklearn import mixture
 from sklearn.mixture import GMM
 from sknn import mlp
 import sknn
+from sklearn import tree
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import BaggingClassifier
 
 #pipeline, cross validation, model selection
 from sklearn.pipeline import Pipeline
@@ -62,6 +66,15 @@ class ScikitLearnML:
 		elif (self.name == "mlp"):
 			return mlp_train(train_inputs, train_targets, self.hyperparameters_dic, model_name)
 
+		elif (self.name == "decision_tree"):
+			return decision_tree_train(train_inputs, train_targets, self.hyperparameters_dic, model_name)
+
+		elif (self.name == "adaboost"):
+			return adaboost_train(train_inputs, train_targets, self.hyperparameters_dic, model_name)
+
+		elif (self.name == "bagging"):
+			return bagging_train(train_inputs, train_targets, self.hyperparameters_dic, model_name)
+
 		else:
 			print("Error: unexpected ML algorithm name")
 
@@ -89,6 +102,16 @@ class ScikitLearnML:
 
 		elif (self.name == "mlp"):
 			return mlp_predict(test_inputs, self.hyperparameters_dic, model_name)
+
+		elif(self.name == "decision_tree"):
+			return decision_tree_predict(test_inputs, self.hyperparameters_dic, model_name)
+
+		elif (self.name == "adaboost"):
+			return adaboost_predict(test_inputs, self.hyperparameters_dic, model_name)
+
+
+		elif (self.name == "bagging"):
+			return bagging_predict(test_inputs, self.hyperparameters_dic, model_name)
 
 		else:
 			print("Error: unexpected ML algorithm name")
@@ -237,7 +260,7 @@ def mlp_train(train_inputs, train_targets, hyperparameters_dic, model_name):
 
 	#fit model
 	#temp code
-	hidden_layer_1 = mlp.Layer(type = 'Tanh', units = 100, weight_decay = 0.01)
+	hidden_layer_1 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
 	#hidden_layer_2 = mlp.Layer(type = 'Tanh', units = 10, weight_decay = 0.01)
 	#hidden_layer_3 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
 	output_layer = mlp.Layer(type = 'Softmax')
@@ -317,64 +340,254 @@ def MoG_classifier_predict(test_inputs, hyperparameters_dic, model_name):
 
 	return p_class1_cond_x
 
+#Decision Tree:
+def decision_tree_train(train_inputs, train_targets, hyperparameters_dic, model_name):
+	#force our train inputs and targets to be np arrays
+	train_inputs = np.array(train_inputs)
+	train_targets = np.array(train_targets).ravel()
+
+	#unpack hyperparamters
+	criterion = hyperparameters_dic['criterion']
+	max_depth = hyperparameters_dic['max_depth']
+	min_samples_split = hyperparameters_dic['min_samples_split']
+
+	#fit decision tree
+	dt_classifier = tree.DecisionTreeClassifier(criterion = criterion, max_depth = max_depth, min_samples_split = min_samples_split)
+	dt_classifier.fit(train_inputs, train_targets)
+
+	#save model
+	joblib.dump(dt_classifier, (model_name+'.pkl'))
+
+
+def decision_tree_predict(test_inputs, hyperparameters_dic, model_name):
+	#force test inputs to be np arrays:
+	test_inputs = np.array(test_inputs)
+
+	#load model
+	dt_classifier = joblib.load((model_name+'.pkl'))
+
+	#make predictions
+	test_pred = dt_classifier.predict_proba(test_inputs)
+
+	return test_pred[:, 1]
+
+#Adaboost:
+def adaboost_train(train_inputs, train_targets, hyperparameters_dic, model_name):
+	#force our train inputs and targets to be np arrays
+	train_inputs = np.array(train_inputs)
+	train_targets = np.array(train_targets).ravel()
+
+	#unpack hyperparamters
+	algorithm_name = hyperparameters_dic['algorithm_name']
+	n_estimators = hyperparameters_dic['n_estimators']
+
+	if (algorithm_name == 'decision_tree'):
+		base_classifier = decision_tree_init(hyperparameters_dic)
+
+	elif (algorithm_name == 'logistic'):
+		base_classifier = logistic_init(hyperparameters_dic)
+
+	else:
+		print('Error: Unexpected base classifier name.')
+
+	#fit model
+	adaboost_classifier = AdaBoostClassifier(base_classifier, n_estimators)
+	adaboost_classifier.fit(train_inputs, train_targets)
+
+	#save model
+	joblib.dump(adaboost_classifier, (model_name+'.pkl'))
+
+def adaboost_predict(test_inputs, hyperparameters_dic, model_name):
+	#force test inputs to be np arrays:
+	test_inputs = np.array(test_inputs)
+
+	#load model
+	adaboost_classifier = joblib.load((model_name+'.pkl'))
+
+	#make predictions
+	test_pred = adaboost_classifier.predict_proba(test_inputs)
+
+	return test_pred[:, 1]
+
+#Bagging:
+def bagging_train(train_inputs, train_targets, hyperparameters_dic, model_name):
+	#force our train inputs and targets to be np arrays
+	train_inputs = np.array(train_inputs)
+	train_targets = np.array(train_targets).ravel()
+
+	#unpack hyperparamters
+	algorithm_name = hyperparameters_dic['algorithm_name']
+	n_estimators = hyperparameters_dic['n_estimators']
+
+	if (algorithm_name == 'decision_tree'):
+		base_classifier = decision_tree_init(hyperparameters_dic)
+
+	elif (algorithm_name == 'logistic'):
+		base_classifier = logistic_init(hyperparameters_dic)
+
+	else:
+		print('Error: Unexpected base classifier name.')
+
+	#fit model
+	bagging_classifier = BaggingClassifier(base_classifier, n_estimators)
+	bagging_classifier.fit(train_inputs, train_targets)
+
+	#save model
+	joblib.dump(bagging_classifier, (model_name+'.pkl'))
+
+def bagging_predict(test_inputs, hyperparameters_dic, model_name):
+	#force test inputs to be np arrays:
+	test_inputs = np.array(test_inputs)
+
+	#load model
+	bagging_classifier = joblib.load((model_name+'.pkl'))
+
+	#make predictions
+	test_pred = bagging_classifier.predict_proba(test_inputs)
+
+	return test_pred[:, 1]
+
+
+#ensemble method base classifier initialization functions
+def decision_tree_init(hyperparameters_dic):
+	#unpack hyperparamters
+	criterion = hyperparameters_dic['criterion']
+	max_depth = hyperparameters_dic['max_depth']
+	min_samples_split = hyperparameters_dic['min_samples_split']
+
+	#fit decision tree
+	dt_classifier = tree.DecisionTreeClassifier(criterion = criterion, max_depth = max_depth, min_samples_split = min_samples_split)
+
+	return dt_classifier
+
+def logistic_init(hyperparameters_dic):
+	#unpack hyperparameters:
+	penalty = hyperparameters_dic['penalty'] #str 'l1' or 'l2'
+	regularization_term = hyperparameters_dic['regularization_term'] #float value
+
+	#fit model
+	logistic_classifier = linear_model.LogisticRegression(penalty= penalty, C=regularization_term)
+
+
+	return logistic_classifier
+
+
+
+
+
+
 
 
 #========
 #Testing
 #========
 
+#training set
+train_data = np.load('train_examples_5000sp.npz')
+train_X = train_data['inputs']
+train_y = train_data['targets']
 
-train_data = np.load('examples.npz')
-total_X = train_data['inputs']
-total_y = train_data['targets']
+#Compute mean and range of X values in order to normalize training, validation and test
+train_X_features_mean = np.zeros(train_X.shape)
+train_X_features_range = np.zeros(train_X.shape)
+
+for j in xrange(train_X.shape[1]):
+	train_X_features_mean[:, j] = float(np.mean(train_X[:, j]))
+	train_X_features_range[:, j]  = float((np.amax(train_X[:, j])-np.amin(train_X[:, j])))
 
 #normalize the value of features to be between -1 to 1
-total_X_temp = np.zeros(total_X.shape)
+for j in xrange(train_X.shape[1]):
+	train_X[:,j] = (train_X[:,j] - train_X_features_mean[0,j])/train_X_features_range[0,j]
 
-for j in xrange(total_X.shape[1]):
-	total_X_temp[:, j] = (total_X[:, j] - np.mean(total_X[:, j]))/float((np.amax(total_X[:, j])-np.amin(total_X[:, j])))
 
-total_X = total_X_temp
+#validation data
+valid_data = np.load('valid_examples_5000sp.npz')
+valid_X = valid_data['inputs']
+valid_y = valid_data['targets']
 
-N = total_X.shape[0]
+#normalize the value of features to be between -1 to 1
+for j in xrange(valid_X.shape[1]):
+	valid_X[:,j] = (valid_X[:,j] - train_X_features_mean[0,j])/train_X_features_range[0,j]
 
-train_X = total_X[:int(N*0.7), :]
-train_y = total_y[:int(N*0.7), :]
 
-valid_X = total_X[int(N*0.7):, :]
-valid_y = total_y[int(N*0.7):, :]
+#test data
+test_data = np.load('test_examples_5000sp.npz')
+test_X = valid_data['inputs']
+test_y = valid_data['targets']
+
+#normalize the value of features to be between -1 to 1
+for j in xrange(test_X.shape[1]):
+	test_X[:,j] = (test_X[:,j] - train_X_features_mean[0,j])/train_X_features_range[0,j]
+
+
+
+def run_feature_importance():
+	#feature importance forest
+	# Build a forest and compute the feature importances
+	print('Feature Importance using random forest')
+	forest = ExtraTreesClassifier(n_estimators=250,
+	                              random_state=0)
+
+	forest.fit(train_X, train_y)
+	importances = forest.feature_importances_
+	std = np.std([tree.feature_importances_ for tree in forest.estimators_],
+	             axis=0)
+	indices = np.argsort(importances)[::-1]
+
+	# Print the feature ranking
+	print("Feature ranking:")
+
+	for f in range(train_X.shape[1]):
+	    print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+
+	# Plot the feature importances of the forest
+	plt.figure()
+	plt.title("Feature importances")
+	plt.bar(range(train_X.shape[1]), importances[indices],
+	       color="r", yerr=std[indices], align="center")
+	plt.xticks(range(train_X.shape[1]), indices)
+	plt.xlim([-1, train_X.shape[1]])
+	plt.show()
+
+
+#run classifiers
 
 print('==================================')
-
-print('running KNN...')
-
-knn_alg = ScikitLearnML('knn', {'k':10})
-knn_alg.train(train_X, train_y, 'knn_test_model.npz')
-
-#evaluate on training set
-train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
-
-train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-print("training CE:")
-print(train_ce)
-print("training classification rate:")
-print(train_class_rate)
-
-#evaluate on valid set
-valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
-
-valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-print("validation CE:")
-print(valid_ce)
-print("validation classification rate:")
-print(valid_class_rate)
-
-
-np.savez('examples-train-predictions-knn.npz', predictions=train_pred)
-np.savez('examples-valid-predictions-knn.npz', predictions=valid_pred)
-
+print('Running Classifiers...')
 print('==================================')
 
+def run_k_nn():
+	print('running KNN...')
+
+	knn_alg = ScikitLearnML('knn', {'k':10})
+	knn_alg.train(train_X, train_y, 'knn_test_model.npz')
+
+	#evaluate on training set
+	train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
+
+	train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	print("training CE:")
+	print(train_ce)
+	print("training classification rate:")
+	print(train_class_rate)
+
+	#evaluate on valid set
+	valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
+
+	valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	print("validation CE:")
+	print(valid_ce)
+	print("validation classification rate:")
+	print(valid_class_rate)
+
+
+	np.savez('examples-train-predictions-knn-5000.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-knn-5000.npz', predictions=valid_pred)
+
+	print('==================================')
+
+
+#def run_logistic():
 print('running logistic...')
 
 logistic_alg = ScikitLearnML('logistic', {'penalty': 'l2', 'regularization_term':0.1})
@@ -399,43 +612,45 @@ print("validation classification rate:")
 print(valid_class_rate)
 
 
-np.savez('examples-train-predictions-logistic.npz', predictions=train_pred)
-np.savez('examples-valid-predictions-logistic.npz', predictions=valid_pred)
+np.savez('examples-train-predictions-logistic-5000.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-logistic-5000.npz', predictions=valid_pred)
 
 
 print('==================================')
 
-print('running neural net classifier...')
+def run_nn():
+	print('running neural net classifier...')
 
-mlp_alg = ScikitLearnML('mlp', {'xxx': 0})
-mlp_alg.train(train_X, train_y, 'mlp_test_model.npz')
+	mlp_alg = ScikitLearnML('mlp', {'xxx': 0})
+	mlp_alg.train(train_X, train_y, 'mlp_test_model.npz')
 
-print('finished training...')
+	print('finished training...')
 
-#evaluate on training set
-train_pred = mlp_alg.predict(train_X, 'mlp_test_model.npz')
+	#evaluate on training set
+	train_pred = mlp_alg.predict(train_X, 'mlp_test_model.npz')
 
-train_ce, train_class_rate = mlp_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-print("training CE:")
-print(train_ce)
-print("training classification rate:")
-print(train_class_rate)
+	train_ce, train_class_rate = mlp_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	print("training CE:")
+	print(train_ce)
+	print("training classification rate:")
+	print(train_class_rate)
 
-#evaluate on valid set
-valid_pred = mlp_alg.predict(valid_X, 'mlp_test_model.npz')
+	#evaluate on valid set
+	valid_pred = mlp_alg.predict(valid_X, 'mlp_test_model.npz')
 
-valid_ce, valid_class_rate = mlp_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-print("validation CE:")
-print(valid_ce)
-print("validation classification rate:")
-print(valid_class_rate)
-
-
-np.savez('examples-train-predictions-mlp.npz', predictions=train_pred)
-np.savez('examples-valid-predictions-mlp.npz', predictions=valid_pred)
+	valid_ce, valid_class_rate = mlp_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	print("validation CE:")
+	print(valid_ce)
+	print("validation classification rate:")
+	print(valid_class_rate)
 
 
-print('==================================')
+	np.savez('examples-train-predictions-mlp.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-mlp.npz', predictions=valid_pred)
+
+
+	print('==================================')
+
 
 def run_mog():
 	print('running MoG_classifier...')
@@ -464,8 +679,8 @@ def run_mog():
 	print(valid_class_rate)
 
 
-	np.savez('examples-train-predictions-mog.npz', predictions=train_pred)
-	np.savez('examples-valid-predictions-mog.npz', predictions=valid_pred)
+	np.savez('examples-train-predictions-mog-5000.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-mog-5000.npz', predictions=valid_pred)
 
 	print('==================================')
 
@@ -503,10 +718,161 @@ def run_svm():
 	np.savez('examples-train-predictions-svm.npz', predictions=train_pred)
 	np.savez('examples-valid-predictions-svm.npz', predictions=valid_pred)
 
+	print('==================================')
 
 
+#def run_decision_tree():
+
+print('running decision tree...')
+
+dt_alg = ScikitLearnML('decision_tree', {'criterion':'gini', 'max_depth':10, 'min_samples_split': 5})
+dt_alg.train(train_X, train_y, 'decision_tree_test_model.npz')
+
+#evaluate on training set
+train_pred = dt_alg.predict(train_X, 'decision_tree_test_model.npz')
+
+train_ce, train_class_rate = dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
+
+#evaluate on valid set
+valid_pred = dt_alg.predict(valid_X, 'decision_tree_test_model.npz')
+
+valid_ce, valid_class_rate = dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
 
 
+np.savez('examples-train-predictions-decisiontree-5000.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-decisiontree-5000.npz', predictions=valid_pred)
+
+print('==========================================')
+
+def run_ada_decision_stump():
+	print('running adaboost - decision stump')
+
+	ada_dt_alg = ScikitLearnML('adaboost', {'algorithm_name': 'decision_tree', 'n_estimators': 25, 'criterion':'gini', 'max_depth':1, 'min_samples_split': 5})
+	ada_dt_alg.train(train_X, train_y, 'ada_dt_test_model.npz')
+
+	#evaluate on training set
+	train_pred = ada_dt_alg.predict(train_X, 'ada_dt_test_model.npz')
+
+	train_ce, train_class_rate = ada_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	print("training CE:")
+	print(train_ce)
+	print("training classification rate:")
+	print(train_class_rate)
+
+	#evaluate on valid set
+	valid_pred = ada_dt_alg.predict(valid_X, 'ada_dt_test_model.npz')
+
+	valid_ce, valid_class_rate = ada_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	print("validation CE:")
+	print(valid_ce)
+	print("validation classification rate:")
+	print(valid_class_rate)
+
+
+	np.savez('examples-train-predictions-ada_dt-5000.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-ada_dt-5000.npz', predictions=valid_pred)
+
+	print('==========================================')
+
+
+def run_ada_decision_tree():
+	print('running adaboost - decision tree')
+
+	ada_dt_alg = ScikitLearnML('adaboost', {'algorithm_name': 'decision_tree', 'n_estimators': 25, 'criterion':'gini', 'max_depth':3, 'min_samples_split': 5})
+	ada_dt_alg.train(train_X, train_y, 'ada_dt_test_model.npz')
+
+	#evaluate on training set
+	train_pred = ada_dt_alg.predict(train_X, 'ada_dt_test_model.npz')
+
+	train_ce, train_class_rate = ada_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	print("training CE:")
+	print(train_ce)
+	print("training classification rate:")
+	print(train_class_rate)
+
+	#evaluate on valid set
+	valid_pred = ada_dt_alg.predict(valid_X, 'ada_dt_test_model.npz')
+
+	valid_ce, valid_class_rate = ada_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	print("validation CE:")
+	print(valid_ce)
+	print("validation classification rate:")
+	print(valid_class_rate)
+
+
+	np.savez('examples-train-predictions-ada_dt-5000.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-ada_dt-5000.npz', predictions=valid_pred)
+
+
+def run_bagging_decision_tree():
+	print('running bagging - decision tree')
+
+	bag_dt_alg = ScikitLearnML('bagging', {'algorithm_name': 'decision_tree', 'n_estimators': 25, 'criterion':'gini', 'max_depth':3, 'min_samples_split': 5})
+	bag_dt_alg.train(train_X, train_y, 'bag_dt_test_model.npz')
+
+	#evaluate on training set
+	train_pred = bag_dt_alg.predict(train_X, 'bag_dt_test_model.npz')
+
+	train_ce, train_class_rate = bag_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	print("training CE:")
+	print(train_ce)
+	print("training classification rate:")
+	print(train_class_rate)
+
+	#evaluate on valid set
+	valid_pred = bag_dt_alg.predict(valid_X, 'bag_dt_test_model.npz')
+
+	valid_ce, valid_class_rate = bag_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	print("validation CE:")
+	print(valid_ce)
+	print("validation classification rate:")
+	print(valid_class_rate)
+
+
+	np.savez('examples-train-predictions-bag_dt-5000.npz', predictions=train_pred)
+	np.savez('examples-valid-predictions-bag_dt-5000.npz', predictions=valid_pred)
+
+	print("==================================")
+
+#def run_bagging_logistic():
+print('running bagging - logistic')
+
+bag_log_alg = ScikitLearnML('bagging', {'algorithm_name': 'logistic', 'n_estimators': 25, 'penalty': 'l2', 'regularization_term': 0.01})
+bag_log_alg.train(train_X, train_y, 'bag_log_test_model.npz')
+
+#evaluate on training set
+train_pred = bag_log_alg.predict(train_X, 'bag_log_test_model.npz')
+
+train_ce, train_class_rate = bag_log_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
+
+#evaluate on valid set
+valid_pred = bag_log_alg.predict(valid_X, 'bag_log_test_model.npz')
+
+valid_ce, valid_class_rate = bag_log_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
+
+
+np.savez('examples-train-predictions-bag_log-5000.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-bag_log-5000.npz', predictions=valid_pred)
+
+print("===================================")
+
+#def run_ada_logistic():
 
 # #Test area
 # print("Tests - knn")
