@@ -522,15 +522,15 @@ for j in xrange(test_X.shape[1]):
 
 
 def run_feature_importance():
-	#feature importance forest
-	# Build a forest and compute the feature importances
+#feature importance forest
+# Build a forest and compute the feature importances
 	print('Feature Importance using random forest')
 	forest = ExtraTreesClassifier(n_estimators=250,
 	                              random_state=0)
 
 	forest.fit(train_X, train_y)
 	importances = forest.feature_importances_
-	std = np.std([tree.feature_importances_ for tree in forest.estimators_],
+	std = np.std([rand_tree.feature_importances_ for rand_tree in forest.estimators_],
 	             axis=0)
 	indices = np.argsort(importances)[::-1]
 
@@ -556,35 +556,35 @@ print('==================================')
 print('Running Classifiers...')
 print('==================================')
 
-def run_k_nn():
-	print('running KNN...')
+#def run_k_nn():
+print('running KNN...')
 
-	knn_alg = ScikitLearnML('knn', {'k':10})
-	knn_alg.train(train_X, train_y, 'knn_test_model.npz')
+knn_alg = ScikitLearnML('knn', {'k':10})
+knn_alg.train(train_X, train_y, 'knn_test_model.npz')
 
-	#evaluate on training set
-	train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
+#evaluate on training set
+train_pred = knn_alg.predict(train_X, 'knn_test_model.npz')
 
-	train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-	print("training CE:")
-	print(train_ce)
-	print("training classification rate:")
-	print(train_class_rate)
+train_ce, train_class_rate = knn_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
 
-	#evaluate on valid set
-	valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
+#evaluate on valid set
+valid_pred = knn_alg.predict(valid_X, 'knn_test_model.npz')
 
-	valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-	print("validation CE:")
-	print(valid_ce)
-	print("validation classification rate:")
-	print(valid_class_rate)
+valid_ce, valid_class_rate = knn_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
 
 
-	np.savez('examples-train-predictions-knn-5000.npz', predictions=train_pred)
-	np.savez('examples-valid-predictions-knn-5000.npz', predictions=valid_pred)
+np.savez('examples-train-predictions-knn-5000.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-knn-5000.npz', predictions=valid_pred)
 
-	print('==================================')
+print('==================================')
 
 
 #def run_logistic():
@@ -752,64 +752,66 @@ np.savez('examples-valid-predictions-decisiontree-5000.npz', predictions=valid_p
 
 print('==========================================')
 
-def run_ada_decision_stump():
-	print('running adaboost - decision stump')
+#def run_ada_decision_stump():
+print('running adaboost - decision stump')
 
-	ada_dt_alg = ScikitLearnML('adaboost', {'algorithm_name': 'decision_tree', 'n_estimators': 25, 'criterion':'gini', 'max_depth':1, 'min_samples_split': 5})
-	ada_dt_alg.train(train_X, train_y, 'ada_dt_test_model.npz')
+ada_dt_alg = ScikitLearnML('adaboost', {'algorithm_name': 'decision_tree', 'n_estimators': 25, 'criterion':'gini', 'max_depth':1, 'min_samples_split': 5})
+ada_dt_alg.train(train_X, train_y, 'ada_dt_test_model.npz')
 
-	#evaluate on training set
-	train_pred = ada_dt_alg.predict(train_X, 'ada_dt_test_model.npz')
+#evaluate on training set
+train_pred = ada_dt_alg.predict(train_X, 'ada_dt_test_model.npz')
 
-	train_ce, train_class_rate = ada_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-	print("training CE:")
-	print(train_ce)
-	print("training classification rate:")
-	print(train_class_rate)
+train_ce, train_class_rate = ada_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
 
-	#evaluate on valid set
-	valid_pred = ada_dt_alg.predict(valid_X, 'ada_dt_test_model.npz')
+#evaluate on valid set
+valid_pred = ada_dt_alg.predict(valid_X, 'ada_dt_test_model.npz')
 
-	valid_ce, valid_class_rate = ada_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-	print("validation CE:")
-	print(valid_ce)
-	print("validation classification rate:")
-	print(valid_class_rate)
-
-
-	np.savez('examples-train-predictions-ada_dt-5000.npz', predictions=train_pred)
-	np.savez('examples-valid-predictions-ada_dt-5000.npz', predictions=valid_pred)
-
-	print('==========================================')
+valid_ce, valid_class_rate = ada_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
 
 
-def run_ada_decision_tree():
-	print('running adaboost - decision tree')
+np.savez('examples-train-predictions-ada_dt-5000.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-ada_dt-5000.npz', predictions=valid_pred)
 
-	ada_dt_alg = ScikitLearnML('adaboost', {'algorithm_name': 'decision_tree', 'n_estimators': 25, 'criterion':'gini', 'max_depth':3, 'min_samples_split': 5})
-	ada_dt_alg.train(train_X, train_y, 'ada_dt_test_model.npz')
-
-	#evaluate on training set
-	train_pred = ada_dt_alg.predict(train_X, 'ada_dt_test_model.npz')
-
-	train_ce, train_class_rate = ada_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
-	print("training CE:")
-	print(train_ce)
-	print("training classification rate:")
-	print(train_class_rate)
-
-	#evaluate on valid set
-	valid_pred = ada_dt_alg.predict(valid_X, 'ada_dt_test_model.npz')
-
-	valid_ce, valid_class_rate = ada_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
-	print("validation CE:")
-	print(valid_ce)
-	print("validation classification rate:")
-	print(valid_class_rate)
+print('==========================================')
 
 
-	np.savez('examples-train-predictions-ada_dt-5000.npz', predictions=train_pred)
-	np.savez('examples-valid-predictions-ada_dt-5000.npz', predictions=valid_pred)
+#def run_ada_decision_tree():
+print('running adaboost - decision tree')
+
+ada_dt_alg = ScikitLearnML('adaboost', {'algorithm_name': 'decision_tree', 'n_estimators': 200, 'criterion':'gini', 'max_depth':3, 'min_samples_split': 5})
+ada_dt_alg.train(train_X, train_y, 'ada_dt_test_model.npz')
+
+#evaluate on training set
+train_pred = ada_dt_alg.predict(train_X, 'ada_dt_test_model.npz')
+
+train_ce, train_class_rate = ada_dt_alg.evaluate(train_y, train_pred, cross_entropy_flag = True)
+print("training CE:")
+print(train_ce)
+print("training classification rate:")
+print(train_class_rate)
+
+#evaluate on valid set
+valid_pred = ada_dt_alg.predict(valid_X, 'ada_dt_test_model.npz')
+
+valid_ce, valid_class_rate = ada_dt_alg.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+print("validation CE:")
+print(valid_ce)
+print("validation classification rate:")
+print(valid_class_rate)
+
+
+np.savez('examples-train-predictions-ada_dt-5000.npz', predictions=train_pred)
+np.savez('examples-valid-predictions-ada_dt-5000.npz', predictions=valid_pred)
+
+print('==========================================')
 
 
 def run_bagging_decision_tree():
