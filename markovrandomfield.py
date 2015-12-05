@@ -180,13 +180,13 @@ print('Testing')
 print('==============================')
 
 #build test priors
-image_pixel_priors = np.ones([400, 1000])*0.1
-image_pixel_priors[:, 400:600] = 0.7
+image_pixel_priors = np.ones([200, 400])*0.1
+image_pixel_priors[:, 120:180] = 0.8
 image_pixel_priors_flat = image_pixel_priors.ravel()
 
 predicted_labels = pixelmap()
 
-predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, 400, 1000)
+predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, 200, 400)
 
 predicted_labels.set_conn_energy(0.1) #this is required to set the strength of connections ()
 
@@ -216,23 +216,43 @@ predicted_labels.mcmc_update(10)
 print(predicted_labels.eval_energy())
 
 print('MCMC update 4')
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(13)
+predicted_labels.mcmc_update(13)
+predicted_labels.mcmc_update(13)
+predicted_labels.mcmc_update(13)
+predicted_labels.mcmc_update(13)
+predicted_labels.mcmc_update(13)
 print(predicted_labels.eval_energy())
-
 
 print('MCMC update 5')
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
 print(predicted_labels.eval_energy())
+
+print('MCMC update 6')
+predicted_labels.mcmc_update(17)
+predicted_labels.mcmc_update(17)
+predicted_labels.mcmc_update(17)
+predicted_labels.mcmc_update(17)
+predicted_labels.mcmc_update(17)
+predicted_labels.mcmc_update(17)
+print(predicted_labels.eval_energy())
+
+
+print('MCMC update 7')
+predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(20)
+print(predicted_labels.eval_energy())
+
+
 
 
 
