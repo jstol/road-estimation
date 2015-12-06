@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import pickle
 from sklearn.externals import joblib
 import math
+from skimage.io import imread, imsave
 
 class pixelmap:
 	"""
@@ -44,10 +45,15 @@ class pixelmap:
 		self.width = width
 		#assign labels
 		self.pixel_labels = np.zeros(height*width)
-		self.pixel_labels[pixel_lvl_predictions>=0.5] = 1
+		# self.pixel_labels[pixel_lvl_predictions>=0.5] = 1
+		
+		# Add noise
+		for pixel_idx in xrange(height*width):
+			ran_val = np.random.rand()
+			if ran_val < pixel_lvl_predictions[pixel_idx]:
+				self.pixel_labels[pixel_idx] = 1
 		
 		#load the pixel priors
-		self.pixel_priors = np.zeros(height*width)
 		self.pixel_priors = pixel_lvl_predictions
 
 	def pixel_index_to_posn(self, pixel_idx):
@@ -180,88 +186,75 @@ print('Testing')
 print('==============================')
 
 #build test priors
-image_pixel_priors = np.ones([200, 400])*0.1
-image_pixel_priors[:, 120:180] = 0.8
-image_pixel_priors_flat = image_pixel_priors.ravel()
+image_type = np.uint16
+max_val = np.iinfo(image_type).max
+prediction_image = imread('example-predictions/encoded/um_road_000042.png', as_grey=True).astype(image_type)
+image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
+image_pixel_priors_flat = prediction_image.ravel()/(float(max_val))
+
+image_pixel_priors_flat = np.maximum(np.minimum(image_pixel_priors_flat,0.9999), 0.0001)
 
 predicted_labels = pixelmap()
 
-predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, 200, 400)
+predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, image_height, image_width)
 
-predicted_labels.set_conn_energy(0.1) #this is required to set the strength of connections ()
+predicted_labels.set_conn_energy(5) #this is required to set the strength of connections ()
 
 print('Initial energy:')
 print(predicted_labels.eval_energy())
 
 print('MCMC update 1')
-predicted_labels.mcmc_update(0.1)
+predicted_labels.mcmc_update(1)
+predicted_labels.mcmc_update(1)
 print(predicted_labels.eval_energy())
 
 print('MCMC update 2')
-predicted_labels.mcmc_update(1)
-predicted_labels.mcmc_update(1)
-predicted_labels.mcmc_update(1)
-predicted_labels.mcmc_update(1)
-predicted_labels.mcmc_update(1)
-predicted_labels.mcmc_update(1)
+predicted_labels.mcmc_update(2)
+predicted_labels.mcmc_update(2)
+predicted_labels.mcmc_update(2)
 print(predicted_labels.eval_energy())
 
 print('MCMC update 3')
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
+predicted_labels.mcmc_update(4)
+predicted_labels.mcmc_update(4)
+predicted_labels.mcmc_update(4)
 print(predicted_labels.eval_energy())
 
 print('MCMC update 4')
-predicted_labels.mcmc_update(13)
-predicted_labels.mcmc_update(13)
-predicted_labels.mcmc_update(13)
-predicted_labels.mcmc_update(13)
-predicted_labels.mcmc_update(13)
-predicted_labels.mcmc_update(13)
+predicted_labels.mcmc_update(5)
+predicted_labels.mcmc_update(5)
+predicted_labels.mcmc_update(5)
 print(predicted_labels.eval_energy())
 
 print('MCMC update 5')
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(7)
+predicted_labels.mcmc_update(7)
+predicted_labels.mcmc_update(7)
 print(predicted_labels.eval_energy())
 
 print('MCMC update 6')
-predicted_labels.mcmc_update(17)
-predicted_labels.mcmc_update(17)
-predicted_labels.mcmc_update(17)
-predicted_labels.mcmc_update(17)
-predicted_labels.mcmc_update(17)
-predicted_labels.mcmc_update(17)
+predicted_labels.mcmc_update(10)
+predicted_labels.mcmc_update(10)
+predicted_labels.mcmc_update(10)
+predicted_labels.mcmc_update(10)
 print(predicted_labels.eval_energy())
-
 
 print('MCMC update 7')
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
-predicted_labels.mcmc_update(20)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
+predicted_labels.mcmc_update(15)
 print(predicted_labels.eval_energy())
 
+print('MCMC update 8')
+predicted_labels.mcmc_update(50)
+predicted_labels.mcmc_update(50)
+predicted_labels.mcmc_update(50)
+predicted_labels.mcmc_update(50)
+predicted_labels.mcmc_update(50)
+predicted_labels.mcmc_update(50)
+print(predicted_labels.eval_energy())
 
-
-
-
-
-
-
-
-
-
-
-
+new_prediction_matrix = predicted_labels.pixel_labels.reshape((image_height, image_width))
+imsave('MRF.PNG', new_prediction_matrix)
 

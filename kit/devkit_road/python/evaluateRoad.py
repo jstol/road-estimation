@@ -27,7 +27,8 @@ class dataStructure:
     All the defines go in here!
     '''
     
-    cats = ['um_lane', 'um_road', 'umm_road', 'uu_road']
+    # cats = ['um_lane', 'um_road', 'umm_road', 'uu_road']
+    cats = ['um_road', 'umm_road', 'uu_road']
     calib_end = '.txt'
     im_end = '.png'
     gt_end = '.png'
