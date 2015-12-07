@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 import pickle
 from sklearn.externals import joblib
 import math
-from skimage.io import imread, imsave
+
+from skimage.io import imread_collection, imread, imshow, imsave
+from skimage import img_as_float, img_as_uint
 
 class pixelmap:
 	"""
@@ -45,7 +47,7 @@ class pixelmap:
 		self.width = width
 		#assign labels
 		self.pixel_labels = np.zeros(height*width)
-		# self.pixel_labels[pixel_lvl_predictions>=0.5] = 1
+		#self.pixel_labels[pixel_lvl_predictions>=0.5] = 1
 		
 		# Add noise
 		for pixel_idx in xrange(height*width):
@@ -54,7 +56,7 @@ class pixelmap:
 				self.pixel_labels[pixel_idx] = 1
 		
 		#load the pixel priors
-		self.pixel_priors = pixel_lvl_predictions
+		self.pixel_priors = np.maximum(np.minimum(pixel_lvl_predictions, 0.9999), 0.0001)
 
 	def pixel_index_to_posn(self, pixel_idx):
 		y_pos = math.floor(pixel_idx/float(self.width))
@@ -134,12 +136,9 @@ class pixelmap:
 		new_global_energy = 0
 		(neighbours_index_list, neighbours_label_list) = self.neighbours_list(pixel_idx)
 
-		#compute current energy
+		#compute current energy & proposed energy
 		for neighbour_label in neighbours_label_list:
 			old_global_energy = old_global_energy + (-1)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
-
-		#compute proposed energy
-		for neighbour_label in neighbours_label_list:
 			new_global_energy = new_global_energy + (-1)*(2*proposed_pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
 
 		#compute change
@@ -176,6 +175,315 @@ class pixelmap:
 	def mcmc_update(self, temperature):
 		for pixel_idx in xrange(self.height*self.width):
 			self.mcmc_one_flip(pixel_idx, temperature)
+
+	def mcmc_rand_update(self, temperature):
+		for t in xrange(5*self.height*self.width):
+			pixel_idx = math.floor(np.random.rand()*self.height*self.width)-1
+			self.mcmc_one_flip(pixel_idx, temperature)
+
+	def find_block(self, pixel_idx):
+	#find and return block with the same pixel label
+		block = [pixel_idx]
+		seed_array = [pixel_idx]
+		while ((len(block)<= 25) and (len(seed_array)>0)):
+			curr_seed = seed_array.pop(0)
+			curr_seed_label = self.pixel_labels[curr_seed]
+			(neighbours_index_list, neighbours_label_list) = self.neighbours_list(curr_seed)
+			for neighbour_index in neighbours_index_list:
+				neighbour_label = self.pixel_labels[neighbour_index]
+				if (neighbour_label == curr_seed_label):
+					block.append(neighbour_index)
+					seed_array.append(neighbour_index)
+
+		return block
+
+	def block_flip_energy_change(self, block):
+		total_energy_change = 0
+
+		for pixel_idx in block:
+			pixel_label = self.pixel_labels[pixel_idx]
+			proposed_pixel_label = 1- pixel_label
+			pixel_lvl_prior = self.pixel_priors[pixel_idx]
+
+			#compute the change in global component of energy
+			old_global_energy = 0
+			new_global_energy = 0
+			(neighbours_index_list, neighbours_label_list) = self.neighbours_list(pixel_idx)
+
+			#compute current energy
+			for neighbour_index in neighbours_index_list:
+				if neighbour_index not in block:
+					neighbour_label = self.pixel_labels[neighbour_index]
+					old_global_energy = old_global_energy + (-1)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+					new_global_energy = new_global_energy + (-1)*(2*proposed_pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+
+			#compute change
+			global_energy_change = new_global_energy - old_global_energy
+
+			#compute the change in local component of energy
+			if pixel_label == 1:
+				old_local_energy = (-1)*np.log(pixel_lvl_prior)
+				new_local_energy = (-1)*np.log(1-pixel_lvl_prior)
+			elif pixel_label == 0:
+				old_local_energy = (-1)*np.log(1-pixel_lvl_prior)
+				new_local_energy = (-1)*np.log(pixel_lvl_prior)
+
+
+			#compute change
+			local_energy_change = new_local_energy - old_global_energy
+
+			#compute total change in energy
+			total_energy_change = total_energy_change +global_energy_change+local_energy_change
+
+		return total_energy_change
+
+	def find_boundary_pixel(self, seed_pixel_idx):
+		seed_pixel_label = self.pixel_labels[seed_pixel_idx]
+		counter = 0
+		seed_array = [seed_pixel_idx]
+		while ((counter <= 25) and (len(seed_array)>0)):
+			counter = counter+1
+			curr_seed = seed_array.pop(0)
+			curr_seed_label = self.pixel_labels[curr_seed]
+			if curr_seed_label != seed_pixel_label:
+				return curr_seed
+			else:
+				(neighbours_index_list, neighbours_label_list) = self.neighbours_list(curr_seed)
+				for neighbour_index in neighbours_index_list:
+					seed_array.append(neighbour_index)
+		return None
+
+
+	def mcmc_one_block_flip(self, pixel_idx, temperature):
+		boundary_pixel_idx = self.find_boundary_pixel(pixel_idx)
+		if (boundary_pixel_idx != None):
+			block = self.find_block(pixel_idx)
+			energy_change = self.block_flip_energy_change(block)
+			prob_flip = min(1, np.exp(-temperature*energy_change))
+
+			#pick a random number uniformly from 0 to 1, if the random number < prob_flip, then flip;
+			#otherwise don't flip
+			rand_num = np.random.rand()
+
+			if rand_num < prob_flip:
+				self.pixel_labels[pixel_idx] = 1-self.pixel_labels[pixel_idx]
+
+
+	def mcmc_block_flip_update(self, temperature):
+		for t in xrange(2*self.height*self.width):
+			pixel_idx = math.floor(np.random.rand()*self.height*self.width)-1
+			self.mcmc_one_block_flip(pixel_idx, temperature)
+
+
+
+
+
+
+
+
+
+
+
+print('==============================')
+print('Testing')
+print('==============================')
+
+image_type = np.uint16
+max_val = np.iinfo(image_type).max
+prediction_image = imread('example-predictions/encoded/um_road_000082.png', as_grey=True).astype(image_type)
+image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
+image_pixel_priors_flat = prediction_image.ravel()/(float(max_val))
+
+print(np.max(image_pixel_priors_flat))
+print(np.min(image_pixel_priors_flat))
+
+predicted_labels = pixelmap()
+
+predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, prediction_image.shape[0], prediction_image.shape[1])
+
+predicted_labels.set_conn_energy(10) #this is required to set the strength of connections ()
+
+updated_predictions = np.reshape(predicted_labels.pixel_labels, [prediction_image.shape[0], prediction_image.shape[1]])
+
+imsave('testing-orig-predictions.png', prediction_image)
+
+imsave('testing-updated-predictions-start.png', updated_predictions)
+
+# print('Done')
+
+print('Initial energy:')
+print(predicted_labels.eval_energy())
+
+print('MCMC update 1')
+predicted_labels.mcmc_rand_update(0.01)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.01)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.01)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.01)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+print('MCMC update 1')
+predicted_labels.mcmc_rand_update(0.02)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.02)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.02)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.02)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+
+print('MCMC update 2')
+predicted_labels.mcmc_rand_update(0.05)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.05)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.05)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.05)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+print('MCMC update 3')
+predicted_labels.mcmc_rand_update(0.07)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.07)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.07)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.07)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+
+print('MCMC update 4')
+predicted_labels.mcmc_rand_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+print('MCMC update 5')
+predicted_labels.mcmc_rand_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+print('MCMC update 6')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.eval_energy())
+
+# print('MCMC update 6')
+# predicted_labels.mcmc_rand_update(0.7)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_block_flip_update(0.7)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_rand_update(0.7)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_update(0.7)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print(predicted_labels.eval_energy())
+
+# print('MCMC update 3')
+# predicted_labels.mcmc_update(3)
+# predicted_labels.mcmc_block_flip_update(3)
+# predicted_labels.mcmc_block_flip_update(3)
+# predicted_labels.mcmc_update(3)
+# print(predicted_labels.eval_energy())
+
+updated_predictions = np.reshape(predicted_labels.pixel_labels, [prediction_image.shape[0], prediction_image.shape[1]])
+
+imsave('testing-updated-predictions-end.png', updated_predictions)
+
+# print('MCMC update 4')
+# predicted_labels.mcmc_rand_update(5)
+# predicted_labels.mcmc_block_flip_update(5)
+# predicted_labels.mcmc_block_flip_update(5)
+# predicted_labels.mcmc_update(5)
+# print(predicted_labels.eval_energy())
+
+# print('MCMC update 5')
+# predicted_labels.mcmc_rand_update(7)
+# predicted_labels.mcmc_block_flip_update(7)
+# predicted_labels.mcmc_block_flip_update(7)
+# predicted_labels.mcmc_update(7)
+# print(predicted_labels.eval_energy())
+
+# print('MCMC update 6')
+# predicted_labels.mcmc_rand_update(10)
+# predicted_labels.mcmc_rand_update(10)
+# predicted_labels.mcmc_rand_update(10)
+# predicted_labels.mcmc_update(10)
+# print(predicted_labels.eval_energy())
+
+
+# print('MCMC update 7')
+# predicted_labels.mcmc_update(20)
+# predicted_labels.mcmc_update(20)
+# predicted_labels.mcmc_update(20)
+# predicted_labels.mcmc_update(20)
+# predicted_labels.mcmc_update(20)
+# predicted_labels.mcmc_update(20)
+# print(predicted_labels.eval_energy())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
