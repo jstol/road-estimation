@@ -345,8 +345,7 @@ class AdaboostModel(EnsembleModel):
 			base_classifier = self.logistic_init(hyperparameters_dic)
 
 		else:
-			print('Error: Unexpected base classifier name.')
-			raise NotImplementedError
+			raise NotImplementedError, 'Error: Unexpected base classifier name.'
 
 		#fit model
 		adaboost_classifier = AdaBoostClassifier(base_classifier, n_estimators)
@@ -385,7 +384,7 @@ class BaggingModel(EnsembleModel):
 			base_classifier = self.logistic_init(hyperparameters_dic)
 
 		else:
-			print('Error: Unexpected base classifier name.')
+			raise NotImplementedError, 'Error: Unexpected base classifier name.'
 
 		#fit model
 		bagging_classifier = BaggingClassifier(base_classifier, n_estimators)
