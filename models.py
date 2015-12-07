@@ -11,7 +11,7 @@ from sklearn.externals import joblib
 from sknn import mlp
 from sklearn import svm, linear_model, tree
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
+from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, RandomForestClassifier, ExtraTreesClassifier
 from sklearn.mixture import GMM
 
 # Model Class:
@@ -402,5 +402,70 @@ class BaggingModel(EnsembleModel):
 
 		#make predictions
 		test_pred = bagging_classifier.predict_proba(test_inputs)
+
+		return test_pred[:, 1]
+
+# Random Forest
+class RandomForestModel(EnsembleModel):
+	def train(self, train_inputs, train_targets, model_name):
+		#force our train inputs and targets to be np arrays
+		train_inputs = np.array(train_inputs)
+		train_targets = np.array(train_targets).ravel()
+
+		#unpack hyperparamters
+		n_estimators = self.hyperparameters['n_estimators']
+		criterion = self.hyperparameters['criterion']
+		max_depth = self.hyperparameters['max_depth']
+		min_samples_split = self.hyperparameters['min_samples_split']
+
+		#fit model
+		randomforest_classifier = RandomForestClassifier(n_estimators = n_estimators, criterion = criterion, max_depth = max_depth, min_samples_split = min_samples_split)
+		randomforest_classifier.fit(train_inputs, train_targets)
+
+		#save model
+		joblib.dump(randomforest_classifier, (model_name+'.pkl'))
+
+	def predict(self, test_inputs, model_name):
+		#force test inputs to be np arrays:
+		test_inputs = np.array(test_inputs)
+
+		#load model
+		randomforest_classifier = joblib.load((model_name+'.pkl'))
+
+		#make predictions
+		test_pred = randomforest_classifier.predict_proba(test_inputs)
+
+		return test_pred[:, 1]
+
+
+# Extra Trees
+class ExtraTreesModel(EnsembleModel):
+	def train(self, train_inputs, train_targets, model_name):
+		#force our train inputs and targets to be np arrays
+		train_inputs = np.array(train_inputs)
+		train_targets = np.array(train_targets).ravel()
+
+		#unpack hyperparamters
+		n_estimators = self.hyperparameters['n_estimators']
+		criterion = self.hyperparameters['criterion']
+		max_depth = self.hyperparameters['max_depth']
+		min_samples_split = self.hyperparameters['min_samples_split']
+
+		#fit model
+		extra_tree_classifier = ExtraTreesClassifier(n_estimators = n_estimators, criterion = criterion, max_depth = max_depth, min_samples_split = min_samples_split)
+		extra_tree_classifier.fit(train_inputs, train_targets)
+
+		#save model
+		joblib.dump(extra_tree_classifier, (model_name+'.pkl'))
+
+	def predict(self, test_inputs, model_name):
+		#force test inputs to be np arrays:
+		test_inputs = np.array(test_inputs)
+
+		#load model
+		extra_tree_classifier = joblib.load((model_name+'.pkl'))
+
+		#make predictions
+		test_pred = extra_tree_classifier.predict_proba(test_inputs)
 
 		return test_pred[:, 1]

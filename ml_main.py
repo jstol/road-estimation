@@ -9,7 +9,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 # Model implementations
-from models import KNNModel, SVMModel, LogisticRegressionModel, NeuralNetworkModel, MOGModel, DecisionTreeModel, AdaboostModel, BaggingModel
+from models import KNNModel, SVMModel, LogisticRegressionModel, NeuralNetworkModel, MOGModel, DecisionTreeModel, AdaboostModel, BaggingModel, RandomForestModel, ExtraTreesModel
 from sklearn.ensemble import ExtraTreesClassifier
 
 def run_feature_importance():
@@ -41,7 +41,7 @@ def run_feature_importance():
 	plt.show()
 
 # Global vars
-available_models = ['knn', 'logistic', 'svm', 'mog', 'neural_net', 'decision_tree']
+available_models = ['knn', 'logistic', 'svm', 'mog', 'neural_net', 'decision_tree', 'randomforest', 'extratrees']
 available_ensemble_methods = ['adaboost', 'bagging']
 
 # Set up command-line arguments
@@ -173,6 +173,20 @@ if __name__ == '__main__':
 			train_output_file = 'examples-train-predictions-decisiontree-5000.npz'
 			valid_output_file = 'examples-valid-predictions-decisiontree-5000.npz'
 
+		#random forest
+		elif (model_name == "randomforest"):
+			model = RandomForestModel({'n_estimators': 100, 'criterion': 'gini', 'max_depth': 3, 'min_samples_split': 5})
+			model_file = 'bag_randforest_test_model.npz'
+			train_output_file = 'examples-train-predictions-randforest-5000.npz'
+			valid_output_file = 'examples-valid-predictions-randforest-5000.npz'
+
+		#extra trees
+		elif (model_name == "extratrees"):
+			model = ExtraTreesModel({'n_estimators': 100, 'criterion': 'gini', 'max_depth': 3, 'min_samples_split': 5})
+			model_file = 'bag_randforest_test_model.npz'
+			train_output_file = 'examples-train-predictions-randforest-5000.npz'
+			valid_output_file = 'examples-valid-predictions-randforest-5000.npz'
+
 		else:
 			raise NotImplementedError, "Invalid model name"
 
@@ -205,6 +219,8 @@ if __name__ == '__main__':
 
 		else:
 			raise NotImplementedError, "Invalid bagging model"
+
+
 
 	# Train and predict
 	print('Start training...')
