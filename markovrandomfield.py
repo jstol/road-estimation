@@ -12,6 +12,7 @@ import math
 
 from skimage.io import imread_collection, imread, imshow, imsave
 from skimage import img_as_float, img_as_uint
+from scipy.ndimage.filters import gaussian_filter
 
 class pixelmap:
 	"""
@@ -292,7 +293,12 @@ image_type = np.uint16
 max_val = np.iinfo(image_type).max
 prediction_image = imread('example-predictions/encoded/um_road_000082.png', as_grey=True).astype(image_type)
 image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
-image_pixel_priors_flat = prediction_image.ravel()/(float(max_val))
+image_pixel_priors = prediction_image/(float(max_val))
+
+print('Gaussian Blur')
+image_pixel_priors = gaussian_filter(image_pixel_priors, 5)
+
+image_pixel_priors_flat = image_pixel_priors.ravel()
 
 print(np.max(image_pixel_priors_flat))
 print(np.min(image_pixel_priors_flat))
@@ -489,80 +495,80 @@ imsave('testing-updated-predictions-end.png', updated_predictions)
 
 
 
-print('==============================')
-print('Testing')
-print('==============================')
+# print('==============================')
+# print('Testing')
+# print('==============================')
 
-#build test priors
-image_type = np.uint16
-max_val = np.iinfo(image_type).max
-prediction_image = imread('example-predictions/encoded/um_road_000042.png', as_grey=True).astype(image_type)
-image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
-image_pixel_priors_flat = prediction_image.ravel()/(float(max_val))
+# #build test priors
+# image_type = np.uint16
+# max_val = np.iinfo(image_type).max
+# prediction_image = imread('example-predictions/encoded/um_road_000042.png', as_grey=True).astype(image_type)
+# image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
+# image_pixel_priors_flat = prediction_image.ravel()/(float(max_val))
 
-image_pixel_priors_flat = np.maximum(np.minimum(image_pixel_priors_flat,0.9999), 0.0001)
+# image_pixel_priors_flat = np.maximum(np.minimum(image_pixel_priors_flat,0.9999), 0.0001)
 
-predicted_labels = pixelmap()
+# predicted_labels = pixelmap()
 
-predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, image_height, image_width)
+# predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, image_height, image_width)
 
-predicted_labels.set_conn_energy(5) #this is required to set the strength of connections ()
+# predicted_labels.set_conn_energy(5) #this is required to set the strength of connections ()
 
-print('Initial energy:')
-print(predicted_labels.eval_energy())
+# print('Initial energy:')
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 1')
-predicted_labels.mcmc_update(1)
-predicted_labels.mcmc_update(1)
-print(predicted_labels.eval_energy())
+# print('MCMC update 1')
+# predicted_labels.mcmc_update(1)
+# predicted_labels.mcmc_update(1)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 2')
-predicted_labels.mcmc_update(2)
-predicted_labels.mcmc_update(2)
-predicted_labels.mcmc_update(2)
-print(predicted_labels.eval_energy())
+# print('MCMC update 2')
+# predicted_labels.mcmc_update(2)
+# predicted_labels.mcmc_update(2)
+# predicted_labels.mcmc_update(2)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 3')
-predicted_labels.mcmc_update(4)
-predicted_labels.mcmc_update(4)
-predicted_labels.mcmc_update(4)
-print(predicted_labels.eval_energy())
+# print('MCMC update 3')
+# predicted_labels.mcmc_update(4)
+# predicted_labels.mcmc_update(4)
+# predicted_labels.mcmc_update(4)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 4')
-predicted_labels.mcmc_update(5)
-predicted_labels.mcmc_update(5)
-predicted_labels.mcmc_update(5)
-print(predicted_labels.eval_energy())
+# print('MCMC update 4')
+# predicted_labels.mcmc_update(5)
+# predicted_labels.mcmc_update(5)
+# predicted_labels.mcmc_update(5)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 5')
-predicted_labels.mcmc_update(7)
-predicted_labels.mcmc_update(7)
-predicted_labels.mcmc_update(7)
-print(predicted_labels.eval_energy())
+# print('MCMC update 5')
+# predicted_labels.mcmc_update(7)
+# predicted_labels.mcmc_update(7)
+# predicted_labels.mcmc_update(7)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 6')
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-predicted_labels.mcmc_update(10)
-print(predicted_labels.eval_energy())
+# print('MCMC update 6')
+# predicted_labels.mcmc_update(10)
+# predicted_labels.mcmc_update(10)
+# predicted_labels.mcmc_update(10)
+# predicted_labels.mcmc_update(10)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 7')
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-predicted_labels.mcmc_update(15)
-print(predicted_labels.eval_energy())
+# print('MCMC update 7')
+# predicted_labels.mcmc_update(15)
+# predicted_labels.mcmc_update(15)
+# predicted_labels.mcmc_update(15)
+# predicted_labels.mcmc_update(15)
+# print(predicted_labels.eval_energy())
 
-print('MCMC update 8')
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-predicted_labels.mcmc_update(50)
-print(predicted_labels.eval_energy())
+# print('MCMC update 8')
+# predicted_labels.mcmc_update(50)
+# predicted_labels.mcmc_update(50)
+# predicted_labels.mcmc_update(50)
+# predicted_labels.mcmc_update(50)
+# predicted_labels.mcmc_update(50)
+# predicted_labels.mcmc_update(50)
+# print(predicted_labels.eval_energy())
 
-new_prediction_matrix = predicted_labels.pixel_labels.reshape((image_height, image_width))
-imsave('MRF.PNG', new_prediction_matrix)
+# new_prediction_matrix = predicted_labels.pixel_labels.reshape((image_height, image_width))
+# imsave('MRF.PNG', new_prediction_matrix)
 
