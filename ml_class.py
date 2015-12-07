@@ -1,33 +1,19 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
-"""defines classes that encapsulates the sci-kit learn ML algorithms"""
+"""Defines classes that encapsulates the scikit-learn ML algorithms"""
 
 #general
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 from sklearn.externals import joblib
 
 #model implementations
-from sklearn import svm
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn import neural_network
-from sklearn import linear_model, decomposition, datasets #logistic regression
-from sklearn import mixture
-from sklearn.mixture import GMM
 from sknn import mlp
-import sknn
-from sklearn import tree
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import BaggingClassifier
-
-#pipeline, cross validation, model selection
-from sklearn.pipeline import Pipeline
-from sklearn.grid_search import GridSearchCV
-
-
+from sklearn import svm, linear_model, tree
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
+from sklearn.mixture import GMM
 
 #ScikitLearnML Class:
 class ScikitLearnML:
@@ -146,9 +132,6 @@ class ScikitLearnML:
 
 		return ce, class_rate
 
-
-
-
 #K Nearest Neighbours
 def knn_train(train_inputs, train_targets, hyperparameters_dic, model_name):
 	train_inputs = np.array(train_inputs)
@@ -176,7 +159,6 @@ def knn_predict(test_inputs, hyperparameters_dic, model_name):
 	test_pred = np.array(neigh.predict_proba(test_inputs))
 	print(test_pred.shape)
 	return test_pred[:,1]
-
 
 #SVM
 def svm_train(train_inputs, train_targets, hyperparameters_dic, model_name):
@@ -297,8 +279,8 @@ def MoG_classifier_train(train_inputs, train_targets, hyperparameters_dic, model
 
 
 	#fit model
-	MoG_class_0 = mixture.GMM(n_components = n_components)
-	MoG_class_1 = mixture.GMM(n_components = n_components)
+	MoG_class_0 = GMM(n_components = n_components)
+	MoG_class_1 = GMM(n_components = n_components)
 
 	train_targets_ravel=train_targets.ravel()
 
@@ -470,13 +452,6 @@ def logistic_init(hyperparameters_dic):
 
 
 	return logistic_classifier
-
-
-
-
-
-
-
 
 #========
 #Testing
