@@ -17,13 +17,13 @@ from sklearn.mixture import GMM
 # Model Class:
 class Model(object):
 	"""Abstract model class"""
-	def __init__(self, hyperparameters_dic):
+	def __init__(self, hyperparameters):
 		"""
 		Attributes:
-			- hyperparameters_dic:	hyperparameters stored as a dictionary (eg. {'k': 3})
+			- hyperparameters:	hyperparameters stored as a dictionary (eg. {'k': 3})
 
 		"""
-		self.hyperparameters_dic = hyperparameters_dic
+		self.hyperparameters = hyperparameters
 
 	def train(self, train_inputs, train_targets, model_name):
 		"""
@@ -81,17 +81,17 @@ class Model(object):
 
 # KNN
 class KNNModel(Model):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets)
 		np.savez(model_name, train_inputs = train_inputs, train_targets = train_targets)
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
 		#unpack hyperparameters
-		k = hyperparameters_dic['k'] #value of k - integer
+		k = self.hyperparameters['k'] #value of k - integer
 
 		#load model
 		model_data = np.load(model_name)
@@ -108,14 +108,14 @@ class KNNModel(Model):
 
 # SVM
 class SVMModel(Model):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets).ravel()
 
 		#unpack hyperparameters
-		kernel = hyperparameters_dic['kernel'] #str: eg. 'rbf', 'poly', 'linear', 'sigmoid'
-		probability_flag = hyperparameters_dic['probability_flag'] #True - returns a probability; False - return a hard assignment
+		kernel = self.hyperparameters['kernel'] #str: eg. 'rbf', 'poly', 'linear', 'sigmoid'
+		probability_flag = self.hyperparameters['probability_flag'] #True - returns a probability; False - return a hard assignment
 
 		#fit model
 		svm_mod = svm.SVC(probability = probability_flag)
@@ -124,13 +124,13 @@ class SVMModel(Model):
 		#save model
 		joblib.dump(svm_mod, (model_name+'.pkl'))
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
 		#unpack hyperparameters
-		kernel = hyperparameters_dic['kernel'] #eg. rbf
-		probability_flag = hyperparameters_dic['probability_flag']
+		kernel = self.hyperparameters['kernel'] #eg. rbf
+		probability_flag = self.hyperparameters['probability_flag']
 
 		#load model
 		svm_mod = joblib.load((model_name+'.pkl'))
@@ -145,14 +145,14 @@ class SVMModel(Model):
 
 # Logistic Regression
 class LogisticRegressionModel(Model):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets).ravel()
 
 		#unpack hyperparameters:
-		penalty = hyperparameters_dic['penalty'] #str 'l1' or 'l2'
-		regularization_term = hyperparameters_dic['regularization_term'] #float value
+		penalty = self.hyperparameters['penalty'] #str 'l1' or 'l2'
+		regularization_term = self.hyperparameters['regularization_term'] #float value
 
 		#fit model
 		logistic = linear_model.LogisticRegression(penalty= penalty, C=regularization_term)
@@ -161,7 +161,7 @@ class LogisticRegressionModel(Model):
 		#save model
 		joblib.dump(logistic, (model_name+'.pkl'))
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
@@ -174,19 +174,19 @@ class LogisticRegressionModel(Model):
 
 # Neural networks (aka multilayer perceptron - mlp)
 class NeuralNetworkModel(Model):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets)
 
 		#unpack hyperparameters:
-		# hidden_layers_tuple = hyperparameters_dic['hidden_layers_tuple'] # tuple - (#hidden_units_layer_1)
-		# activation = hyperparameters_dic['activation'] #str 'logistic', 'tanh', 'relu' => appearantly tanh and relu are better
-		# optimization_alg = hyperparameters_dic['optimization_alg'] #str 'l-bfg' - all data or 'adam' - batch - default 200
-		# L2_reg_alpha = hyperparameters_dic['L2_reg_alpha'] #L2 regularization term
-		#learning_rate_type = hyperparameters_dic['learning_rate_type'] #'constant','invscaling' - decreasing, 'adaptive' - only used for sgd
-		#random_state = hyperparameters_dic['random_state'] #int - initialization
-		#learning_rate_init = hyperparameters_dic['learning_rate_init'] #double
+		# hidden_layers_tuple = self.hyperparameters['hidden_layers_tuple'] # tuple - (#hidden_units_layer_1)
+		# activation = self.hyperparameters['activation'] #str 'logistic', 'tanh', 'relu' => appearantly tanh and relu are better
+		# optimization_alg = self.hyperparameters['optimization_alg'] #str 'l-bfg' - all data or 'adam' - batch - default 200
+		# L2_reg_alpha = self.hyperparameters['L2_reg_alpha'] #L2 regularization term
+		#learning_rate_type = self.hyperparameters['learning_rate_type'] #'constant','invscaling' - decreasing, 'adaptive' - only used for sgd
+		#random_state = self.hyperparameters['random_state'] #int - initialization
+		#learning_rate_init = self.hyperparameters['learning_rate_init'] #double
 
 		#fit model
 		#temp code
@@ -205,7 +205,7 @@ class NeuralNetworkModel(Model):
 		joblib.dump(mlp_model, (model_name+'.pkl'))
 
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
@@ -218,13 +218,13 @@ class NeuralNetworkModel(Model):
 
 # Mixture of Gaussian Classifier
 class MOGModel(Model):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets).ravel()
 
 		#unpack hyperparameters:
-		n_components = hyperparameters_dic['n_components']
+		n_components = self.hyperparameters['n_components']
 
 
 		#fit model
@@ -243,12 +243,12 @@ class MOGModel(Model):
 		#save model
 		joblib.dump(mog_classifier, (model_name+'.pkl'))
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
 		#unpack hyperparameters:
-		n_components = hyperparameters_dic['n_components']
+		n_components = self.hyperparameters['n_components']
 
 		#load model
 		mog_classifier = joblib.load((model_name+'.pkl'))
@@ -273,15 +273,15 @@ class MOGModel(Model):
 
 # Decision Tree
 class DecisionTreeModel(Model):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets).ravel()
 
 		#unpack hyperparamters
-		criterion = hyperparameters_dic['criterion']
-		max_depth = hyperparameters_dic['max_depth']
-		min_samples_split = hyperparameters_dic['min_samples_split']
+		criterion = self.hyperparameters['criterion']
+		max_depth = self.hyperparameters['max_depth']
+		min_samples_split = self.hyperparameters['min_samples_split']
 
 		#fit decision tree
 		dt_classifier = tree.DecisionTreeClassifier(criterion = criterion, max_depth = max_depth, min_samples_split = min_samples_split)
@@ -290,7 +290,7 @@ class DecisionTreeModel(Model):
 		#save model
 		joblib.dump(dt_classifier, (model_name+'.pkl'))
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
@@ -306,21 +306,21 @@ class DecisionTreeModel(Model):
 class EnsembleModel(Model):
 	"""Abstract ensemble model class"""
 	#ensemble method base classifier initialization functions
-	def decision_tree_init(self, hyperparameters_dic):
+	def decision_tree_init(self):
 		#unpack hyperparamters
-		criterion = hyperparameters_dic['criterion']
-		max_depth = hyperparameters_dic['max_depth']
-		min_samples_split = hyperparameters_dic['min_samples_split']
+		criterion = self.hyperparameters['criterion']
+		max_depth = self.hyperparameters['max_depth']
+		min_samples_split = self.hyperparameters['min_samples_split']
 
 		#fit decision tree
 		dt_classifier = tree.DecisionTreeClassifier(criterion = criterion, max_depth = max_depth, min_samples_split = min_samples_split)
 
 		return dt_classifier
 
-	def logistic_init(self, hyperparameters_dic):
+	def logistic_init(self):
 		#unpack hyperparameters:
-		penalty = hyperparameters_dic['penalty'] #str 'l1' or 'l2'
-		regularization_term = hyperparameters_dic['regularization_term'] #float value
+		penalty = self.hyperparameters['penalty'] #str 'l1' or 'l2'
+		regularization_term = self.hyperparameters['regularization_term'] #float value
 
 		#fit model
 		logistic_classifier = linear_model.LogisticRegression(penalty= penalty, C=regularization_term)
@@ -329,20 +329,20 @@ class EnsembleModel(Model):
 
 # Adaboost
 class AdaboostModel(EnsembleModel):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets).ravel()
 
 		#unpack hyperparamters
-		algorithm_name = hyperparameters_dic['algorithm_name']
-		n_estimators = hyperparameters_dic['n_estimators']
+		algorithm_name = self.hyperparameters['algorithm_name']
+		n_estimators = self.hyperparameters['n_estimators']
 
 		if (algorithm_name == 'decision_tree'):
-			base_classifier = self.decision_tree_init(hyperparameters_dic)
+			base_classifier = self.decision_tree_init()
 
 		elif (algorithm_name == 'logistic'):
-			base_classifier = self.logistic_init(hyperparameters_dic)
+			base_classifier = self.logistic_init()
 
 		else:
 			raise NotImplementedError, 'Error: Unexpected base classifier name.'
@@ -354,7 +354,7 @@ class AdaboostModel(EnsembleModel):
 		#save model
 		joblib.dump(adaboost_classifier, (model_name+'.pkl'))
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
@@ -368,20 +368,20 @@ class AdaboostModel(EnsembleModel):
 
 # Bagging
 class BaggingModel(EnsembleModel):
-	def train(self, train_inputs, train_targets, hyperparameters_dic, model_name):
+	def train(self, train_inputs, train_targets, model_name):
 		#force our train inputs and targets to be np arrays
 		train_inputs = np.array(train_inputs)
 		train_targets = np.array(train_targets).ravel()
 
 		#unpack hyperparamters
-		algorithm_name = hyperparameters_dic['algorithm_name']
-		n_estimators = hyperparameters_dic['n_estimators']
+		algorithm_name = self.hyperparameters['algorithm_name']
+		n_estimators = self.hyperparameters['n_estimators']
 
 		if (algorithm_name == 'decision_tree'):
-			base_classifier = self.decision_tree_init(hyperparameters_dic)
+			base_classifier = self.decision_tree_init()
 
 		elif (algorithm_name == 'logistic'):
-			base_classifier = self.logistic_init(hyperparameters_dic)
+			base_classifier = self.logistic_init()
 
 		else:
 			raise NotImplementedError, 'Error: Unexpected base classifier name.'
@@ -393,7 +393,7 @@ class BaggingModel(EnsembleModel):
 		#save model
 		joblib.dump(bagging_classifier, (model_name+'.pkl'))
 
-	def predict(self, test_inputs, hyperparameters_dic, model_name):
+	def predict(self, test_inputs, model_name):
 		#force test inputs to be np arrays:
 		test_inputs = np.array(test_inputs)
 
