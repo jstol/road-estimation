@@ -54,7 +54,7 @@ _argument_parser.add_argument('-m', '--model',
 	choices=available_models,
 	dest='model_name',
 	help='the model to run',
-	required=True,
+	required=True
 )
 _argument_parser.add_argument('-e', '--ensemble-type',
 	choices=available_ensemble_methods,
@@ -197,7 +197,7 @@ if __name__ == '__main__':
 			train_output_file = 'examples-train-predictions-bag_dt-5000.npz'
 			valid_output_file = 'examples-valid-predictions-bag_dt-5000.npz'
 
-		elif model_name = 'logistic':
+		elif model_name == 'logistic':
 			model = BaggingModel({'algorithm_name': 'logistic', 'n_estimators': 25, 'penalty': 'l2', 'regularization_term': 0.01})
 			model_file = 'bag_log_test_model.npz'
 			train_output_file = 'examples-train-predictions-bag_log-5000.npz'
