@@ -74,10 +74,27 @@ class Model(object):
 			ce = None
 
 		# Calculate the fraction of correct predictions (with y_i < 0.5 being class 0 and y_i >= 0.5 being class 1)
-		predicted_class = np.round(predictions)
+		predicted_class = np.zeros(predictions.shape)
+		#thresholding
+		predicted_class[predictions >=0.5] = 1
 		class_rate = np.sum(np.equal(targets, predicted_class))/float(len(targets))
 
-		return ce, class_rate
+
+		#compute precision and recall
+		true_pos = np.sum(np.logical_and(targets == 1, predicted_class == 1))
+		true_neg = np.sum(np.logical_and(targets == 0, predicted_class == 0))
+		false_pos = np.sum(np.logical_and(targets == 0, predicted_class == 1))
+		false_neg = np.sum(np.logical_and(targets == 1, predicted_class == 0))
+
+		precision = true_pos/float(true_pos+false_pos)
+		recall = true_pos/float(true_pos+false_neg)
+		f1_score = (precision*recall)/float(precision+recall)
+
+		class_rate2 = (true_pos+true_neg)/float(true_pos+true_neg+false_pos+false_neg)
+
+		#print("true pos: {0}; true_neg {1}; false pos {2}; false neg {3}; class rate {4}\n".format(true_pos, true_neg, false_pos, false_neg, class_rate2))
+
+		return ce, class_rate, precision, recall, f1_score
 
 # KNN
 class KNNModel(Model):

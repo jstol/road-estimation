@@ -233,9 +233,13 @@ if __name__ == '__main__':
 	print('Finished predicting on training...')
 
 	# Calculate CE/class rate on training set
-	train_ce, train_class_rate = model.evaluate(train_y, train_pred, cross_entropy_flag = True)
+	train_ce, train_class_rate, train_precision, train_recall, train_f1_score = model.evaluate(train_y, train_pred, cross_entropy_flag = True)
 	print("Training CE:\n{0}".format(train_ce))
 	print("Training classification rate:\n{0}".format(train_class_rate))
+	print("Training precision:\n{0}".format(train_precision))
+	print("Training recall:\n{0}".format(train_recall))
+	print("Training f1 score:\n{0}".format(train_f1_score))
+
 
 	# Evaluate on valid set
 	print('Start predicting on validation...')
@@ -243,9 +247,12 @@ if __name__ == '__main__':
 	print('Finished predicting on validation...')
 
 	# Calculate CE/class rate on validation set
-	valid_ce, valid_class_rate = model.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
+	valid_ce, valid_class_rate, valid_precision, valid_recall, valid_f1_score = model.evaluate(valid_y, valid_pred, cross_entropy_flag = True)
 	print("Validation CE:\n{0}".format(valid_ce))
 	print("Validation classification rate:\n{0}".format(valid_class_rate))
+	print("Validation precision:\n{0}".format(valid_precision))
+	print("Validation recall:\n{0}".format(valid_recall))
+	print("Validation f1 score:\n{0}".format(valid_f1_score))
 
 	# Save predictions
 	np.savez(train_output_file, predictions=train_pred)
