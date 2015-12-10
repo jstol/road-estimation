@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import pickle
 from sklearn.externals import joblib
 import math
+import random
 
 from skimage.io import imread_collection, imread, imshow, imsave
 from skimage import img_as_float, img_as_uint
@@ -73,6 +74,10 @@ class pixelmap:
 		self.pixel_conns = None #this is going to be a sparse DxD dimensional matrix (i,j)th element is the connection between pixel i and pixel j
 		self.pixel_priors = None #this is going to be a D dimensional array (each element is the label for 1 pixel) storing the predicted probability of the pixel being road based on superpixel classifier
 		self.conn_energy = None #we need to define this somewhere
+		self.uncertain_pixel_list = [] # this stores the list of pixels that we are uncertain after superpixel classification; we will only run mrf on these
+		self.road_threshold = 0.8
+		self.nonroad_threshold = 0.2
+		self.total_energy = None
 
 	def set_conn_energy(self, conn_energy):
 		self.conn_energy = conn_energy
@@ -88,9 +93,16 @@ class pixelmap:
 			
 		#Add noise
 		for pixel_idx in xrange(height*width):
-			ran_val = np.random.rand()
-			if ran_val < pixel_lvl_predictions[pixel_idx]:
+			if (pixel_lvl_predictions[pixel_idx] > self.road_threshold):
 				self.pixel_labels[pixel_idx] = 1
+			elif (pixel_lvl_predictions[pixel_idx] < self.nonroad_threshold):
+				self.pixel_labels[pixel_idx] = 0
+
+			else:
+				self.uncertain_pixel_list.append(pixel_idx)
+				ran_val = np.random.rand()
+				if ran_val < pixel_lvl_predictions[pixel_idx]:
+					self.pixel_labels[pixel_idx] = 1
 
 		#threshold
 		#self.pixel_labels[pixel_lvl_predictions>=0.4] = 1
@@ -98,6 +110,9 @@ class pixelmap:
 		
 		#load the pixel priors
 		self.pixel_priors = np.maximum(np.minimum(pixel_lvl_predictions, 0.9999), 0.0001)
+
+	def init_energy(self):
+		self.total_energy = self.eval_energy()
 
 	def pixel_index_to_posn(self, pixel_idx):
 		y_pos = math.floor(pixel_idx/float(self.width))
@@ -151,7 +166,7 @@ class pixelmap:
 			pixel_label = self.pixel_labels[pixel_idx]
 			(neighbours_index_list, neighbours_label_list) = self.neighbours_list(pixel_idx)
 			for neighbour_label in neighbours_label_list:
-				global_energy = global_energy + (-1)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+				global_energy += + (-1.0)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy/2
 
 		#compute individual pixel component of energy
 		pixel_labels = self.pixel_labels
@@ -179,8 +194,8 @@ class pixelmap:
 
 		#compute current energy & proposed energy
 		for neighbour_label in neighbours_label_list:
-			old_global_energy = old_global_energy + (-1)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
-			new_global_energy = new_global_energy + (-1)*(2*proposed_pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+			old_global_energy += (-1.0)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+			new_global_energy += (-1.0)*(2*proposed_pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
 
 		#compute change
 		global_energy_change = new_global_energy - old_global_energy
@@ -193,9 +208,12 @@ class pixelmap:
 			old_local_energy = (-1)*np.log(1-pixel_lvl_prior)
 			new_local_energy = (-1)*np.log(pixel_lvl_prior)
 
+		else:
+			print('error: unexpected label value')
+
 
 		#compute change
-		local_energy_change = new_local_energy - old_global_energy
+		local_energy_change = new_local_energy - old_local_energy
 
 		#compute total change in energy
 		total_energy_change = global_energy_change+local_energy_change
@@ -212,14 +230,16 @@ class pixelmap:
 
 		if rand_num < prob_flip:
 			self.pixel_labels[pixel_idx] = 1-self.pixel_labels[pixel_idx]
+			self.total_energy += energy_change
+
 
 	def mcmc_update(self, temperature):
-		for pixel_idx in xrange(self.height*self.width):
+		for pixel_idx in self.uncertain_pixel_list:
 			self.mcmc_one_flip(pixel_idx, temperature)
 
 	def mcmc_rand_update(self, temperature):
-		for t in xrange(5*self.height*self.width):
-			pixel_idx = math.floor(np.random.rand()*self.height*self.width)-1
+		for t in xrange(5*len(self.uncertain_pixel_list)):
+			pixel_idx = random.choice(self.uncertain_pixel_list)
 			self.mcmc_one_flip(pixel_idx, temperature)
 
 	def find_block(self, pixel_idx):
@@ -232,7 +252,7 @@ class pixelmap:
 			(neighbours_index_list, neighbours_label_list) = self.neighbours_list(curr_seed)
 			for neighbour_index in neighbours_index_list:
 				neighbour_label = self.pixel_labels[neighbour_index]
-				if (neighbour_label == curr_seed_label):
+				if ((neighbour_label == curr_seed_label) and (neighbour_index not in block)):
 					block.append(neighbour_index)
 					seed_array.append(neighbour_index)
 
@@ -241,7 +261,17 @@ class pixelmap:
 	def block_flip_energy_change(self, block):
 		total_energy_change = 0
 
-		for pixel_idx in block:
+		#print('size of block')
+		#print(len(block))
+		#print(block)
+
+		for t in xrange(len(block)):
+			#for the pixel_id in the block
+			#print('t:')
+			#print(t)
+			pixel_idx = block[t]
+			#print('pixel_idx')
+			#print(pixel_idx)
 			pixel_label = self.pixel_labels[pixel_idx]
 			proposed_pixel_label = 1- pixel_label
 			pixel_lvl_prior = self.pixel_priors[pixel_idx]
@@ -250,16 +280,26 @@ class pixelmap:
 			old_global_energy = 0
 			new_global_energy = 0
 			(neighbours_index_list, neighbours_label_list) = self.neighbours_list(pixel_idx)
+			#print(neighbours_index_list)
 
 			#compute current energy
 			for neighbour_index in neighbours_index_list:
-				if neighbour_index not in block:
+				if int(neighbour_index) in block:
+					#print('neighbour in block')
+					#print(neighbour_index)
+					pass
+				else:
+					#print('neighbour not in block')
+					#print(neighbour_index)
 					neighbour_label = self.pixel_labels[neighbour_index]
-					old_global_energy = old_global_energy + (-1)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
-					new_global_energy = new_global_energy + (-1)*(2*proposed_pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+					old_global_energy += (-1.0)*(2*pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
+					new_global_energy += (-1.0)*(2*proposed_pixel_label-1)*(2*neighbour_label-1)*self.conn_energy
 
 			#compute change
 			global_energy_change = new_global_energy - old_global_energy
+
+			old_local_energy = 0
+			new_local_energy = 0
 
 			#compute the change in local component of energy
 			if pixel_label == 1:
@@ -271,10 +311,10 @@ class pixelmap:
 
 
 			#compute change
-			local_energy_change = new_local_energy - old_global_energy
+			local_energy_change = new_local_energy - old_local_energy
 
 			#compute total change in energy
-			total_energy_change = total_energy_change +global_energy_change+local_energy_change
+			total_energy_change +=global_energy_change+local_energy_change
 
 		return total_energy_change
 
@@ -298,7 +338,7 @@ class pixelmap:
 	def mcmc_one_block_flip(self, pixel_idx, temperature):
 		boundary_pixel_idx = self.find_boundary_pixel(pixel_idx)
 		if (boundary_pixel_idx != None):
-			block = self.find_block(pixel_idx)
+			block = self.find_block(boundary_pixel_idx)
 			energy_change = self.block_flip_energy_change(block)
 			prob_flip = min(1, np.exp(-temperature*energy_change))
 
@@ -307,12 +347,18 @@ class pixelmap:
 			rand_num = np.random.rand()
 
 			if rand_num < prob_flip:
-				self.pixel_labels[pixel_idx] = 1-self.pixel_labels[pixel_idx]
+				old_pixel_labels = self.pixel_labels[block]
+				self.pixel_labels[block] = 1-self.pixel_labels[block]
+				assert(np.all(np.logical_xor(self.pixel_labels[block]==1, old_pixel_labels==1)))
+				self.total_energy += energy_change
+
+				#print(predicted_labels.eval_energy())
+				#print(predicted_labels.total_energy)
 
 
 	def mcmc_block_flip_update(self, temperature):
-		for t in xrange(2*self.height*self.width):
-			pixel_idx = math.floor(np.random.rand()*self.height*self.width)-1
+		for t in xrange(2*len(self.uncertain_pixel_list)):
+			pixel_idx = random.choice(self.uncertain_pixel_list)
 			self.mcmc_one_block_flip(pixel_idx, temperature)
 
 
@@ -331,12 +377,12 @@ print('==============================')
 
 image_type = np.uint16
 max_val = np.iinfo(image_type).max
-prediction_image = imread('example-predictions/encoded/um_road_000082.png', as_grey=True).astype(image_type)
+prediction_image = imread('example-predictions/encoded/um_road_000042.png', as_grey=True).astype(image_type)
 image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
 image_pixel_priors = prediction_image/(float(max_val))
 
 print('Gaussian Blur')
-image_pixel_priors = gaussian_filter(image_pixel_priors, 8)
+image_pixel_priors = gaussian_filter(image_pixel_priors, 5)
 
 image_pixel_priors_flat = image_pixel_priors.ravel()
 
@@ -347,7 +393,9 @@ predicted_labels = pixelmap()
 
 predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, prediction_image.shape[0], prediction_image.shape[1])
 
-predicted_labels.set_conn_energy(10) #this is required to set the strength of connections ()
+predicted_labels.set_conn_energy(0.5) #this is required to set the strength of connections ()
+
+predicted_labels.init_energy()
 
 updated_predictions = np.reshape(predicted_labels.pixel_labels, [prediction_image.shape[0], prediction_image.shape[1]])
 
@@ -415,85 +463,86 @@ ax.set_xticks([])
 ax.set_yticks([])
 plt.show()
 
-#edge detector
-# Compute the Canny filter for two values of sigma
-im = image_pixel_priors
-edges1 = feature.canny(im)
-edges2 = feature.canny(im, sigma=3)
+def run_img_seg():
+	#edge detector
+	# Compute the Canny filter for two values of sigma
+	im = image_pixel_priors
+	edges1 = feature.canny(im)
+	edges2 = feature.canny(im, sigma=3)
 
-# display results
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True)
+	# display results
+	fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True)
 
-ax1.imshow(im, cmap=plt.cm.jet)
-ax1.axis('off')
-ax1.set_title('noisy image', fontsize=20)
+	ax1.imshow(im, cmap=plt.cm.jet)
+	ax1.axis('off')
+	ax1.set_title('noisy image', fontsize=20)
 
-ax2.imshow(edges1, cmap=plt.cm.gray)
-ax2.axis('off')
-ax2.set_title('Canny filter, $\sigma=1$', fontsize=20)
+	ax2.imshow(edges1, cmap=plt.cm.gray)
+	ax2.axis('off')
+	ax2.set_title('Canny filter, $\sigma=1$', fontsize=20)
 
-ax3.imshow(edges2, cmap=plt.cm.gray)
-ax3.axis('off')
-ax3.set_title('Canny filter, $\sigma=3$', fontsize=20)
+	ax3.imshow(edges2, cmap=plt.cm.gray)
+	ax3.axis('off')
+	ax3.set_title('Canny filter, $\sigma=3$', fontsize=20)
 
-fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9,
-                    bottom=0.02, left=0.02, right=0.98)
+	fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9,
+	                    bottom=0.02, left=0.02, right=0.98)
 
-plt.show()
+	plt.show()
 
-#segementation
-fill_road = ndi.binary_fill_holes(edges1)
+	#segementation
+	fill_road = ndi.binary_fill_holes(edges1)
 
-fig, ax = plt.subplots(figsize=(4, 3))
-ax.imshow(fill_road, cmap=plt.cm.gray, interpolation='nearest')
-ax.axis('off')
-ax.set_title('Filling the holes')
+	fig, ax = plt.subplots(figsize=(4, 3))
+	ax.imshow(fill_road, cmap=plt.cm.gray, interpolation='nearest')
+	ax.axis('off')
+	ax.set_title('Filling the holes')
 
-plt.show()
+	plt.show()
 
-markers = np.zeros_like(fill_road)
-markers[50, 500] = 1
-markers[300, 10] = 2
+	markers = np.zeros_like(fill_road)
+	markers[50, 500] = 1
+	markers[300, 10] = 2
 
-fig, ax = plt.subplots(figsize=(4, 3))
-ax.imshow(markers, cmap=plt.cm.spectral, interpolation='nearest')
-ax.axis('off')
-ax.set_title('markers')
+	fig, ax = plt.subplots(figsize=(4, 3))
+	ax.imshow(markers, cmap=plt.cm.spectral, interpolation='nearest')
+	ax.axis('off')
+	ax.set_title('markers')
 
-plt.show()
+	plt.show()
 
 
-# apply threshold
-image = image_pixel_priors
-thresh = threshold_otsu(image)
-bw = closing(image > thresh, square(100))
+	# apply threshold
+	image = image_pixel_priors
+	thresh = threshold_otsu(image)
+	bw = closing(image > thresh, square(100))
 
-# remove artifacts connected to image border
-cleared = bw.copy()
-clear_border(cleared)
+	# remove artifacts connected to image border
+	cleared = bw.copy()
+	clear_border(cleared)
 
-# label image regions
-label_image = label(cleared)
-borders = np.logical_xor(bw, cleared)
-label_image[borders] = -1
-image_label_overlay = label2rgb(label_image, image=image)
+	# label image regions
+	label_image = label(cleared)
+	borders = np.logical_xor(bw, cleared)
+	label_image[borders] = -1
+	image_label_overlay = label2rgb(label_image, image=image)
 
-fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
-ax.imshow(image_label_overlay)
+	fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
+	ax.imshow(image_label_overlay)
 
-for region in regionprops(label_image):
+	for region in regionprops(label_image):
 
-    # skip small images
-    if region.area < 100:
-        continue
+	    # skip small images
+	    if region.area < 100:
+	        continue
 
-    # draw rectangle around segmented coins
-    minr, minc, maxr, maxc = region.bbox
-    rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
-                              fill=False, edgecolor='red', linewidth=2)
-    ax.add_patch(rect)
+	    # draw rectangle around segmented coins
+	    minr, minc, maxr, maxc = region.bbox
+	    rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
+	                              fill=False, edgecolor='red', linewidth=2)
+	    ax.add_patch(rect)
 
-plt.show()
+	plt.show()
 
 #denoising algorithms
 def run_denoising():
@@ -622,162 +671,214 @@ def run_randomwalker_seg():
 	                    right=1)
 	plt.show()
 
-#Felzenszwalb
-img = img_as_float(image_pixel_priors)
-segments_fz = felzenszwalb(img, scale=1000, sigma=0.8, min_size=1000)
-# segments_slic = slic(img, n_segments=250, compactness=10, sigma=1)
-# segments_quick = quickshift(img, kernel_size=3, max_dist=6, ratio=0.5)
+def run_felzenszwalb():
+	#Felzenszwalb
+	img = img_as_float(image_pixel_priors)
+	segments_fz = felzenszwalb(img, scale=1000, sigma=0.8, min_size=1000)
+	# segments_slic = slic(img, n_segments=250, compactness=10, sigma=1)
+	# segments_quick = quickshift(img, kernel_size=3, max_dist=6, ratio=0.5)
 
-print("Felzenszwalb's number of segments: %d" % len(np.unique(segments_fz)))
-# print("Slic number of segments: %d" % len(np.unique(segments_slic)))
-# print("Quickshift number of segments: %d" % len(np.unique(segments_quick)))
+	print("Felzenszwalb's number of segments: %d" % len(np.unique(segments_fz)))
+	# print("Slic number of segments: %d" % len(np.unique(segments_slic)))
+	# print("Quickshift number of segments: %d" % len(np.unique(segments_quick)))
 
-fig, ax = plt.subplots(1, 3, sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
-fig.set_size_inches(8, 3, forward=True)
-fig.subplots_adjust(0.05, 0.05, 0.95, 0.95, 0.05, 0.05)
+	fig, ax = plt.subplots(1, 3, sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
+	fig.set_size_inches(8, 3, forward=True)
+	fig.subplots_adjust(0.05, 0.05, 0.95, 0.95, 0.05, 0.05)
 
-ax[0].imshow(mark_boundaries(img, segments_fz))
-ax[0].set_title("Felzenszwalbs's method")
-# ax[1].imshow(mark_boundaries(img, segments_slic))
-# ax[1].set_title("SLIC")
-# ax[2].imshow(mark_boundaries(img, segments_quick))
-# ax[2].set_title("Quickshift")
-for a in ax:
-    a.set_xticks(())
-    a.set_yticks(())
-plt.show()
+	ax[0].imshow(mark_boundaries(img, segments_fz))
+	ax[0].set_title("Felzenszwalbs's method")
+	# ax[1].imshow(mark_boundaries(img, segments_slic))
+	# ax[1].set_title("SLIC")
+	# ax[2].imshow(mark_boundaries(img, segments_quick))
+	# ax[2].set_title("Quickshift")
+	for a in ax:
+	    a.set_xticks(())
+	    a.set_yticks(())
+	plt.show()
 
 
 # print('Done')
-
-def run_mcmc():
-	print('Initial energy:')
-	print(predicted_labels.eval_energy())
-
-	print('MCMC update 1')
-	predicted_labels.mcmc_rand_update(0.01)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.01)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.01)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.01)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
-
-	print('MCMC update 1')
-	predicted_labels.mcmc_rand_update(0.02)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.02)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.02)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.02)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
+print('Size of uncertain region')
+print(len(predicted_labels.uncertain_pixel_list))
 
 
-	print('MCMC update 2')
-	predicted_labels.mcmc_rand_update(0.05)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.05)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.05)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.05)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
+print('Initial energy:')
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
 
-	print('MCMC update 3')
-	predicted_labels.mcmc_rand_update(0.07)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.07)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.07)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.07)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
+# print('MCMC update 1')
+# predicted_labels.mcmc_rand_update(0.01)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_block_flip_update(0.01)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_rand_update(0.01)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_update(0.01)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print(predicted_labels.eval_energy())
+# print(predicted_labels.total_energy)
+
+# print('MCMC update 2')
+# predicted_labels.mcmc_rand_update(0.02)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_block_flip_update(0.02)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_rand_update(0.02)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_update(0.02)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print(predicted_labels.eval_energy())
+# print(predicted_labels.total_energy)
 
 
-	print('MCMC update 4')
-	predicted_labels.mcmc_rand_update(0.1)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.1)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.1)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.1)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
+# print('MCMC update 2')
+# predicted_labels.mcmc_rand_update(0.05)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_block_flip_update(0.05)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_rand_update(0.05)
+## joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_update(0.05)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print(predicted_labels.eval_energy())
+# print(predicted_labels.total_energy)
 
-	print('MCMC update 5')
-	predicted_labels.mcmc_rand_update(0.2)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.2)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.2)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.2)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
 
-	print('MCMC update 6')
-	predicted_labels.mcmc_rand_update(0.5)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_block_flip_update(0.5)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_rand_update(0.5)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print('...')
-	predicted_labels.mcmc_update(0.5)
-	joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	print(predicted_labels.eval_energy())
+# print('MCMC update 3')
+# predicted_labels.mcmc_rand_update(0.07)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_block_flip_update(0.07)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_rand_update(0.07)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print('...')
+# predicted_labels.mcmc_update(0.07)
+# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+# print(predicted_labels.eval_energy())
+# print(predicted_labels.total_energy)
 
-	# print('MCMC update 6')
-	# predicted_labels.mcmc_rand_update(0.7)
-	# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	# print('...')
-	# predicted_labels.mcmc_block_flip_update(0.7)
-	# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	# print('...')
-	# predicted_labels.mcmc_rand_update(0.7)
-	# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	# print('...')
-	# predicted_labels.mcmc_update(0.7)
-	# joblib.dump(predicted_labels, ('mrf_labels.pkl'))
-	# print(predicted_labels.eval_energy())
 
-	# print('MCMC update 3')
-	# predicted_labels.mcmc_update(3)
-	# predicted_labels.mcmc_block_flip_update(3)
-	# predicted_labels.mcmc_block_flip_update(3)
-	# predicted_labels.mcmc_update(3)
-	# print(predicted_labels.eval_energy())
+print('MCMC update 4')
+predicted_labels.mcmc_rand_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
 
-	updated_predictions = np.reshape(predicted_labels.pixel_labels, [prediction_image.shape[0], prediction_image.shape[1]])
+print('MCMC update 5')
+predicted_labels.mcmc_rand_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
 
-	imsave('testing-updated-predictions-end.png', updated_predictions)
+print('MCMC update 6')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
+
+print('MCMC update 7')
+predicted_labels.mcmc_rand_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
+
+print('MCMC update 8')
+predicted_labels.mcmc_rand_update(1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(1)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
+
+print('MCMC update 9')
+predicted_labels.mcmc_rand_update(2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(2)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
+
+print('MCMC update 10')
+predicted_labels.mcmc_rand_update(4)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_block_flip_update(4)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_rand_update(4)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print('...')
+predicted_labels.mcmc_update(4)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+#print(predicted_labels.eval_energy())
+print(predicted_labels.total_energy)
+
+# 
+updated_predictions = np.reshape(predicted_labels.pixel_labels, [prediction_image.shape[0], prediction_image.shape[1]])
+
+imsave('testing-updated-predictions-end.png', updated_predictions)
 
 # print('MCMC update 4')
 # predicted_labels.mcmc_rand_update(5)
