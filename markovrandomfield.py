@@ -75,9 +75,11 @@ class pixelmap:
 		self.pixel_priors = None #this is going to be a D dimensional array (each element is the label for 1 pixel) storing the predicted probability of the pixel being road based on superpixel classifier
 		self.conn_energy = None #we need to define this somewhere
 		self.uncertain_pixel_list = [] # this stores the list of pixels that we are uncertain after superpixel classification; we will only run mrf on these
+		self.total_energy = None #used to track the total energy of the current configuration
+		#configuration fields
 		self.road_threshold = 0.8
 		self.nonroad_threshold = 0.2
-		self.total_energy = None
+		self.block_size = 100
 
 	def set_conn_energy(self, conn_energy):
 		self.conn_energy = conn_energy
@@ -246,7 +248,7 @@ class pixelmap:
 	#find and return block with the same pixel label
 		block = [pixel_idx]
 		seed_array = [pixel_idx]
-		while ((len(block)<= 25) and (len(seed_array)>0)):
+		while ((len(block)<= self.block_size) and (len(seed_array)>0)):
 			curr_seed = seed_array.pop(0)
 			curr_seed_label = self.pixel_labels[curr_seed]
 			(neighbours_index_list, neighbours_label_list) = self.neighbours_list(curr_seed)
@@ -375,27 +377,52 @@ print('==============================')
 print('Testing')
 print('==============================')
 
+print('==============================')
+print('Load prediction image')
+print('==============================')
+
 image_type = np.uint16
 max_val = np.iinfo(image_type).max
+orig_photo = imread('example-predictions/original-photo/um_000042.png')
 prediction_image = imread('example-predictions/encoded/um_road_000042.png', as_grey=True).astype(image_type)
 image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
 image_pixel_priors = prediction_image/(float(max_val))
 
+print('========================================')
+print('Apply pre-processing to prediction image')
+print('=========================================')
+
 print('Gaussian Blur')
 image_pixel_priors = gaussian_filter(image_pixel_priors, 5)
 
+# print('Bilateral Filter')
+# image_pixel_priors = denoise_bilateral(image_pixel_priors, sigma_range=0.05, sigma_spatial=15)
+
 image_pixel_priors_flat = image_pixel_priors.ravel()
 
+#
+print('Testing - Max and Min Value')
 print(np.max(image_pixel_priors_flat))
 print(np.min(image_pixel_priors_flat))
 
 predicted_labels = pixelmap()
 
+#===================================
+#script for initiating the MRF class
+#===================================
+
+print('============================')
+print('Initializing MRF:')
+print('============================')
+
 predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, prediction_image.shape[0], prediction_image.shape[1])
-
 predicted_labels.set_conn_energy(0.5) #this is required to set the strength of connections ()
-
 predicted_labels.init_energy()
+
+
+print('============================')
+print('Image Processing Scripts:')
+print('============================')
 
 updated_predictions = np.reshape(predicted_labels.pixel_labels, [prediction_image.shape[0], prediction_image.shape[1]])
 
@@ -770,6 +797,10 @@ print(predicted_labels.total_energy)
 # print(predicted_labels.total_energy)
 
 
+print('============================')
+print('Run MRF')
+print('============================')
+
 print('MCMC update 4')
 predicted_labels.mcmc_rand_update(0.1)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
@@ -803,12 +834,39 @@ print(predicted_labels.total_energy)
 print('MCMC update 6')
 predicted_labels.mcmc_rand_update(0.5)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
 print('...')
 predicted_labels.mcmc_block_flip_update(0.5)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
 print('...')
 predicted_labels.mcmc_rand_update(0.5)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_block_flip_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_block_flip_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_block_flip_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_rand_update(0.5)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
 print('...')
 predicted_labels.mcmc_update(0.5)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
@@ -818,12 +876,33 @@ print(predicted_labels.total_energy)
 print('MCMC update 7')
 predicted_labels.mcmc_rand_update(0.7)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
 print('...')
 predicted_labels.mcmc_block_flip_update(0.7)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
 print('...')
 predicted_labels.mcmc_rand_update(0.7)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_update(0.7)
+predicted_labels.mcmc_block_flip_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_rand_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_update(0.7)
+predicted_labels.mcmc_block_flip_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
+print('...')
+predicted_labels.mcmc_rand_update(0.7)
+joblib.dump(predicted_labels, ('mrf_labels.pkl'))
+print(predicted_labels.total_energy)
 print('...')
 predicted_labels.mcmc_update(0.7)
 joblib.dump(predicted_labels, ('mrf_labels.pkl'))
