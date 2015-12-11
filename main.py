@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 """Main script for training and evaluating models"""
 
 # Standard modules
-import argparse, time, os, json
+import argparse, time, os, json, csv
 # Third party modules
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,6 +102,11 @@ _argument_parser.add_argument('--model-file',
 	help='the file to output the model to',
 	required=True
 )
+_argument_parser.add_argument('--summary-file',
+	dest='summary_file',
+	help='the summary report file to output all metrics to',
+	required=True
+)
 # TODO add arguments for file locations, etc.
 args = _argument_parser.parse_args()
 
@@ -116,6 +121,7 @@ if __name__ == '__main__':
 	valid_data_file = args.valid_data_file
 	valid_output_file = args.valid_predictions_file
 	model_file = args.model_file
+	summary_file = args.summary_file
 
 	if not ensemble_method:
 		print("Running {0} - trained on {1}".format(model_name, train_data_file))
@@ -277,6 +283,42 @@ if __name__ == '__main__':
 		f.write("Validation precision:\n\t{0}\n".format(valid_precision))
 		f.write("Validation recall:\n\t{0}\n".format(valid_recall))
 		f.write("Validation f1 score:\n\t{0}\n".format(valid_f1_score))
+
+		# Also write to the summary file
+		fieldnames = ['algorithm', 'configuration', 'data_set', 'ce', 'classification_rate', 'precision', 'recall', 'f1']
+		
+		if os.path.isfile(summary_file):
+			report = open(summary_file, 'a')
+			writer = csv.DictWriter(report, fieldnames=fieldnames)
+		else:
+			report = open(summary_file, 'w')
+			writer = csv.DictWriter(report, fieldnames=fieldnames)
+			writer.writeheader()
+		
+		# Write train results
+		writer.writerow({
+			'algorithm': model_name,
+			'configuration': params_json,
+			'data_set': 'train',
+			'ce': train_ce,
+			'classification_rate': train_class_rate,
+			'precision': train_precision,
+			'recall': train_recall,
+			'f1': train_f1_score
+		})
+		# Write valid results
+		writer.writerow({
+			'algorithm': model_name,
+			'configuration': params_json,
+			'data_set': 'valid',
+			'ce': valid_ce,
+			'classification_rate': valid_class_rate,
+			'precision': valid_precision,
+			'recall': valid_recall,
+			'f1': valid_f1_score
+		})
+
+		report.close()
 
 	# Save predictions
 	np.savez(train_output_file, predictions=train_pred)

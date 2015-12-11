@@ -2,9 +2,11 @@
 alg=$1
 params=$2
 param_configuration_subdir=$3
+start_date=$4
 superpixels_set=(100 1000 5000 10000 15000 20000)
 
-results_dir="results/${alg}/${param_configuration_subdir}"
+run_dir="results/${alg}"
+results_dir="${run_dir}/${param_configuration_subdir}"
 
 echo "====================================="
 echo "Running for ${alg} - ${params}"
@@ -18,7 +20,8 @@ do
 	python main.py -m "${alg}" -o "${results_dir}/test_results/${alg}_${i}sp_superpixel_level.txt" -p "${params}"\
 		--train-data "superpixel_data/train_examples_${i}sp.npz" --train-predictions-output "${results_dir}/predictions/${alg}_${i}sp_train.npz" \
 		--valid-data "superpixel_data/valid_examples_${i}sp.npz" --valid-predictions-output "${results_dir}/predictions/${alg}_${i}sp_valid.npz" \
-		--model-file "${results_dir}/models/${alg}_${i}sp.npz"
+		--model-file "${results_dir}/models/${alg}_${i}sp.npz" \
+		--summary-file "${run_dir}/superpixel_report_${start_date}.csv"
 
 	# Encode predictions and get pixel-level results
 	pixel_test_results_file="${results_dir}/test_results/${alg}_${i}sp_pixel_level.txt"
@@ -36,7 +39,7 @@ do
 		-ov "${results_dir}/prediction_images/${i}sp/train/encoded_overlay" >/dev/null 2>&1
 		# --generate-overlay \
 
-	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/train/encoded/" "kit/data_road/training/divided_data/train" >> "${pixel_test_results_file}"
+	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/train/encoded/" "kit/data_road/training/divided_data/train" "${run_dir}/pixel_report_${start_date}.csv" "knn" "${params}" "train" >> "${pixel_test_results_file}"
 
 	printf "\n===================\n" >> "${pixel_test_results_file}"
 	printf "VALID\n" >> "${pixel_test_results_file}"
@@ -51,7 +54,7 @@ do
 		-ov "${results_dir}/prediction_images/${i}sp/valid/encoded_overlay" >/dev/null 2>&1
 		# --generate-overlay \
 
-	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/valid/encoded/" "kit/data_road/training/divided_data/valid" >> "${pixel_test_results_file}"
+	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/valid/encoded/" "kit/data_road/training/divided_data/valid" "${run_dir}/pixel_report_${start_date}.csv" "knn" "${params}" "valid" >> "${pixel_test_results_file}"
 
 	# Write param config to a file
 	echo ${params} > "${results_dir}/params_configuration.txt"
