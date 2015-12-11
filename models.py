@@ -207,12 +207,32 @@ class NeuralNetworkModel(Model):
 
 		#fit model
 		#temp code
-		hidden_layer_1 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
+		#hidden_layer_1 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
 		#hidden_layer_2 = mlp.Layer(type = 'Tanh', units = 10, weight_decay = 0.01)
 		#hidden_layer_3 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
-		output_layer = mlp.Layer(type = 'Softmax')
+		#output_layer = mlp.Layer(type = 'Softmax')
 
-		list_of_layers = [hidden_layer_1, output_layer]
+		#list_of_layers = [hidden_layer_1, output_layer]
+
+		list_of_layers = []
+		list_of_layers_params = self.hyperparameters['list_of_layers_params']
+		for curr_layer_params in list_of_layers_params:
+			if (curr_layer_params['role'] == 'hidden'):
+				curr_layer_type = curr_layer_params['type']
+				curr_layer_units = curr_layer_params['units']
+				curr_layer_weight_decay = curr_layer_params['weight_decay']
+				curr_layer = mlp.Layer(type = curr_layer_type, units = curr_layer_units, weight_decay = curr_layer_weight_decay)
+
+			elif (curr_layer_params['role'] == 'output'):
+				curr_layer_type = curr_layer_params['type']
+				curr_layer = mlp.Layer(type = 'Softmax')
+
+
+			else:
+				raise NotImplementedError, "Neural Net - unknown layer type"
+
+			list_of_layers.append(curr_layer)
+
 
 
 		mlp_model = mlp.Classifier(layers = list_of_layers)
