@@ -46,8 +46,8 @@ def main(result_dir, train_dir, debug = False):
     :param debug: debug flag (OPTIONAL)
     '''
     
-    print "Starting evaluation ..." 
-    print "Available categories are: %s" %dataStructure.cats
+    # print "Starting evaluation ..." 
+    # print "Available categories are: %s" %dataStructure.cats
     
     thresh = np.array(range(0,256))/255.0
     trainData_subdir_gt = 'gt_image_2/'
@@ -64,7 +64,7 @@ def main(result_dir, train_dir, debug = False):
     eval_cats = [] # saves al categories at were evaluated
     outputline = []
     for cat in dataStructure.cats:
-        print "Execute evaluation for category %s ..." %cat
+        print "\nExecute evaluation for category %s ..." %cat
         fn_search  = '%s*%s' %(cat, dataStructure.gt_end)
         gt_fileList = glob(os.path.join(gt_dir, fn_search))
         assert len(gt_fileList)>0, 'Error reading ground truth'
@@ -83,7 +83,7 @@ def main(result_dir, train_dir, debug = False):
         class_tag = tags[1]
         
         submission_tag = dataset_tag + '_' + class_tag + '_'
-        print "Searching for submitted files with prefix: %s" %submission_tag
+        # print "Searching for submitted files with prefix: %s" %submission_tag
         
         for fn_curGt in gt_fileList:
             
@@ -125,23 +125,23 @@ def main(result_dir, train_dir, debug = False):
             totalNegNum += negNum
         
         if category_ok:
-            print "Computing evaluation scores..."
+            # print "Computing evaluation scores..."
             # Compute eval scores!
             prob_eval_scores.append(pxEval_maximizeFMeasure(totalPosNum, totalNegNum, totalFN, totalFP, thresh = thresh))
             eval_cats.append(cat)
             
             factor = 100
             for property in dataStructure.eval_propertyList:
-                print '%s: %4.2f ' %(property, prob_eval_scores[-1][property]*factor,)
+                print '%s:\n\t%4.2f ' %(property, prob_eval_scores[-1][property]*factor,)
 
 
-            print "Finished evaluating category: %s " %(eval_cats[-1],)
+            # print "Finished evaluating category: %s " %(eval_cats[-1],)
     
     if len(eval_cats)>0:     
-        print "Successfully finished evaluation for %d categories: %s " %(len(eval_cats),eval_cats)
+        # print "Successfully finished evaluation for %d categories: %s " %(len(eval_cats),eval_cats)
         return True
     else:
-        print "No categories have been evaluated!"
+        # print "No categories have been evaluated!"
         return False
     
 
