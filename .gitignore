@@ -61,3 +61,7 @@ data_road*
 *.npz
 *.npy
 *.pkl
+
+
+results/
+superpixel_data/
