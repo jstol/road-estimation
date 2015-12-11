@@ -1,0 +1,93 @@
+PIXEL LEVEL RESULTS
+
+===================
+TRAINING
+===================
+
+Execute evaluation for category um_road ...
+MaxF:
+	90.01 
+AvgPrec:
+	90.68 
+PRE_wp:
+	89.78 
+REC_wp:
+	90.24 
+FPR_wp:
+	2.07 
+FNR_wp:
+	9.76 
+
+Execute evaluation for category umm_road ...
+MaxF:
+	91.59 
+AvgPrec:
+	91.53 
+PRE_wp:
+	89.38 
+REC_wp:
+	93.91 
+FPR_wp:
+	3.45 
+FNR_wp:
+	6.09 
+
+Execute evaluation for category uu_road ...
+MaxF:
+	85.93 
+AvgPrec:
+	88.35 
+PRE_wp:
+	85.96 
+REC_wp:
+	85.90 
+FPR_wp:
+	2.22 
+FNR_wp:
+	14.10 
+
+===================
+VALID
+===================
+
+Execute evaluation for category um_road ...
+MaxF:
+	90.26 
+AvgPrec:
+	90.53 
+PRE_wp:
+	90.38 
+REC_wp:
+	90.14 
+FPR_wp:
+	1.81 
+FNR_wp:
+	9.86 
+
+Execute evaluation for category umm_road ...
+MaxF:
+	92.47 
+AvgPrec:
+	91.43 
+PRE_wp:
+	89.84 
+REC_wp:
+	95.25 
+FPR_wp:
+	3.43 
+FNR_wp:
+	4.75 
+
+Execute evaluation for category uu_road ...
+MaxF:
+	85.26 
+AvgPrec:
+	87.90 
+PRE_wp:
+	83.77 
+REC_wp:
+	86.82 
+FPR_wp:
+	2.33 
+FNR_wp:
+	13.18 

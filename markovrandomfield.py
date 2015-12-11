@@ -384,7 +384,7 @@ print('==============================')
 image_type = np.uint16
 max_val = np.iinfo(image_type).max
 orig_photo = imread('example-predictions/original-photo/um_000042.png')
-prediction_image = imread('example-predictions/encoded/um_road_000042-2.png', as_grey=True).astype(image_type)
+prediction_image = imread('example-predictions/encoded/um_road_000042-3.png', as_grey=True).astype(image_type)
 image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
 image_pixel_priors = prediction_image/(float(max_val))
 

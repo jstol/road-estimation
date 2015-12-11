@@ -1,0 +1,10 @@
+SUPERPIXEL LEVEL RESULTS
+
+knn - trained on superpixel_data/train_examples_5000sp.npz
+
+Training time (s): 
+	0.669146060944
+
+===================
+TRAINING
+===================

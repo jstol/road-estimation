@@ -5,8 +5,9 @@ param_configuration_subdir=$3
 superpixels_set=(100 1000 5000 10000 15000 20000)
 =======
 start_date=$4
-superpixels_set=(100 1000 5000 10000 15000 20000)
->>>>>>> 2d21afad91618bf7dd4740bc10e06a34926f8b59
+#superpixels_set=(100 1000 5000 10000 15000 20000)
+superpixels_set=(5000)
+
 
 run_dir="results/${alg}"
 results_dir="${run_dir}/${param_configuration_subdir}"

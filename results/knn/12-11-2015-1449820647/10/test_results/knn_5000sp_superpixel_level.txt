@@ -1,0 +1,38 @@
+SUPERPIXEL LEVEL RESULTS
+
+knn - trained on superpixel_data/train_examples_5000sp.npz
+
+Training time (s): 
+	0.678218126297
+
+===================
+TRAINING
+===================
+Training prediction time (s):
+	216.906347036
+Training CE:
+	0.101979913012
+Training classification rate:
+	0.955041888127
+Training precision:
+	0.862638941498
+Training recall:
+	0.895749413408
+Training f1 score:
+	0.43944122109
+
+===================
+VALID
+===================
+Valid prediction time (s):
+	67.8406448364
+Validation CE:
+	inf
+Validation classification rate:
+	0.95297029703
+Validation precision:
+	0.853320425944
+Validation recall:
+	0.886408430876
+Validation f1 score:
+	0.434774888529
