@@ -15,7 +15,7 @@
 #           Jannik Fritsch <jannik.fritsch@honda-ri.de>
 #
 
-import sys,os
+import sys,os,csv
 from glob import glob
 import shutil
 from helper import evalExp, pxEval_maximizeFMeasure, getGroundTruth
@@ -38,7 +38,7 @@ class dataStructure:
 #########################################################################
 # function that does the evaluation
 #########################################################################
-def main(result_dir, train_dir, debug = False):
+def main(result_dir, train_dir, summary_file, model_name, config_string, data_set, debug = False):
     '''
     main method of evaluateRoad
     :param result_dir: directory with the result propability maps, e.g., /home/elvis/kitti_road/my_results
@@ -127,13 +127,37 @@ def main(result_dir, train_dir, debug = False):
         if category_ok:
             # print "Computing evaluation scores..."
             # Compute eval scores!
-            prob_eval_scores.append(pxEval_maximizeFMeasure(totalPosNum, totalNegNum, totalFN, totalFP, thresh = thresh))
+            metrics = pxEval_maximizeFMeasure(totalPosNum, totalNegNum, totalFN, totalFP, thresh = thresh)
+            prob_eval_scores.append(metrics)
             eval_cats.append(cat)
-            
-            factor = 100
-            for property in dataStructure.eval_propertyList:
-                print '%s:\n\t%4.2f ' %(property, prob_eval_scores[-1][property]*factor,)
 
+            metrics_dict = {}
+            factor = 100
+            for prop in dataStructure.eval_propertyList:
+                metrics_dict[prop] = prob_eval_scores[-1][prop]*factor
+                print '%s:\n\t%4.2f ' %(prop, metrics_dict[prop],)
+            
+            # Write to summary file
+            fieldnames = ['algorithm', 'configuration', 'data_set', 'category'] + dataStructure.eval_propertyList
+            if os.path.isfile(summary_file):
+                report = open(summary_file, 'a')
+                writer = csv.DictWriter(report, fieldnames=fieldnames)
+            else:
+                report = open(summary_file, 'w')
+                writer = csv.DictWriter(report, fieldnames=fieldnames)
+                writer.writeheader()
+            
+            # Reformat metrics
+            for key in metrics_dict:
+                metrics_dict[key] = float(metrics_dict[key])
+
+            metrics_dict['algorithm'] = model_name
+            metrics_dict['configuration'] = config_string
+            metrics_dict['data_set'] = data_set
+            metrics_dict['category'] = cat
+
+            writer.writerow(metrics_dict)
+            report.close()
 
             # print "Finished evaluating category: %s " %(eval_cats[-1],)
     
@@ -152,17 +176,25 @@ def main(result_dir, train_dir, debug = False):
 if __name__ == "__main__":
 
     # check for correct number of arguments.
-    if len(sys.argv)!=3:
-        print "Usage: python evaluateRoad.py  <result_dir> <gt_dir>"
+    if len(sys.argv)!=7:
+        print "Usage: python evaluateRoad.py <result_dir> <gt_dir> <summary_file> <config_string> <data_set>"
         print "<result_dir> = directory with the result propability maps, e.g., /home/elvis/kitti_road/my_results"
-        print "<train_dir>  = training directory (has to contain gt_image_2)  e.g., /home/elvis/kitti_road/training"
+        print "<gt_dir> = training directory (has to contain gt_image_2)  e.g., /home/elvis/kitti_road/training"
+        print "<summary_file> = sumary CSV file e.g., /home/elvis/report.csv"
+        print "<model_name> = name of the algorithm used e.g., 'knn'"
+        print "<config_string> = string used to identify the model's configuration e.g., '{\"k\": 1}' or 'model1'"
+        print "<data_set> = data set being tested e.g., 'test' or 'valid'"
         sys.exit(1)
       
     # parse parameters
     result_dir = sys.argv[1]
     gt_dir = sys.argv[2]
+    summary_file = sys.argv[3]
+    model_name = sys.argv[4]
+    config_string = sys.argv[5]
+    data_set = sys.argv[6]
 
     # Excecute main fun 
-    main(result_dir, gt_dir)
+    main(result_dir, gt_dir, summary_file, model_name, config_string, data_set)
 
 

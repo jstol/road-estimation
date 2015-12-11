@@ -17,11 +17,15 @@ params_set=( \
 #	'{"k": }' \
 #	'{"k": 1000}' \
 )
+start_date=$(date +"%m-%d-%Y-%s")
 
+count=1
 for params in "${params_set[@]}"
 do
-	results_subdir=$(date +"%m-%d-%Y_%s")
-	./run_main.sh "${alg}" "${params}" "${results_subdir}"
+	results_subdir="${start_date}/${count}"
+	./run_main.sh "${alg}" "${params}" "${results_subdir}" "${start_date}"
+
+	let count++
 done
 
 echo "====================================="
