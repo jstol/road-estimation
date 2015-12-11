@@ -252,8 +252,8 @@ if __name__ == '__main__':
 		start = time.time()
 		train_pred = model.predict(train_X, model_file)
 		end = time.time()
-		train_time = end - start
-		f.write("Training prediction time (s):\n\t{0}\n".format(train_time))
+		predict_train_time = end - start
+		f.write("Training prediction time (s):\n\t{0}\n".format(predict_train_time))
 		print('Finished predicting on training...')
 
 		# Calculate CE/class rate on training set
@@ -272,8 +272,8 @@ if __name__ == '__main__':
 		start = time.time()
 		valid_pred = model.predict(valid_X, model_file)
 		end = time.time()
-		train_time = end - start
-		f.write("Valid prediction time (s):\n\t{0}\n".format(train_time))
+		predict_valid_time = end - start
+		f.write("Valid prediction time (s):\n\t{0}\n".format(predict_valid_time))
 		print('Finished predicting on validation...')
 
 		# Calculate CE/class rate on validation set
@@ -285,7 +285,7 @@ if __name__ == '__main__':
 		f.write("Validation f1 score:\n\t{0}\n".format(valid_f1_score))
 
 		# Also write to the summary file
-		fieldnames = ['algorithm', 'configuration', 'data_set', 'ce', 'classification_rate', 'precision', 'recall', 'f1']
+		fieldnames = ['algorithm', 'configuration', 'data_set', 'train_time', 'predict_time', 'ce', 'classification_rate', 'precision', 'recall', 'f1']
 		
 		if os.path.isfile(summary_file):
 			report = open(summary_file, 'a')
@@ -300,6 +300,8 @@ if __name__ == '__main__':
 			'algorithm': model_name,
 			'configuration': params_json,
 			'data_set': 'train',
+			'train_time': train_time,
+			'predict_time': predict_train_time,
 			'ce': train_ce,
 			'classification_rate': train_class_rate,
 			'precision': train_precision,
@@ -311,6 +313,8 @@ if __name__ == '__main__':
 			'algorithm': model_name,
 			'configuration': params_json,
 			'data_set': 'valid',
+			'train_time': train_time,
+			'predict_time': predict_valid_time,
 			'ce': valid_ce,
 			'classification_rate': valid_class_rate,
 			'precision': valid_precision,
