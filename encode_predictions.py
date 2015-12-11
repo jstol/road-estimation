@@ -10,7 +10,6 @@ from os import path, makedirs
 from skimage.io import imread_collection, imread, imsave
 import numpy as np
 
-category = 'um'
 file_type = '.png'
 target_type = 'road'
 
@@ -50,6 +49,11 @@ _argument_parser.add_argument('-ov', '--overlay-output-dir',
 	required=False,
 	default='predictions/encoded-overlay/'
 )
+_argument_parser.add_argument('--generate-overlay',
+	dest='generate_overlay',
+	action='store_true',
+	default=False
+)
 args = _argument_parser.parse_args()
 
 # Run script
@@ -60,11 +64,12 @@ if __name__ == '__main__':
 	example_images_input_path = args.example_images_input_path
 	encoded_output_dir = args.encoded_output_dir
 	encoded_overlay_output_dir = args.encoded_overlay_output_dir
+	generate_overlay = args.generate_overlay
 
 	# Create any missing dirs
 	if not path.exists(encoded_output_dir):
 		makedirs(encoded_output_dir)
-	if not path.exists(encoded_overlay_output_dir):
+	if generate_overlay and not path.exists(encoded_overlay_output_dir):
 		makedirs(encoded_overlay_output_dir)
 
 	# Read in pixel maps file
@@ -75,6 +80,7 @@ if __name__ == '__main__':
 	all_predictions = np.load(predictions_input_path)['predictions']
 
 	for file_id in pixel_map_files:
+		category = file_id.split('_')[0]
 		image_id = file_id.split('{0}_'.format(category))[-1].split(file_type)[0] # ex. 000009
 
 		print("Encoding image '{0}'".format(file_id))
@@ -89,12 +95,16 @@ if __name__ == '__main__':
 		all_predictions = all_predictions[num_superpixels : ]
 
 		for superpixel_i in xrange(num_superpixels):
-			# Color the road red for visualization of the prediction
-			if image_predictions[superpixel_i] >= 0.5:
-				image[superpixels_mask == superpixel_i, 1] = image_predictions[superpixel_i]
-				image[superpixels_mask == superpixel_i, 2] = image_predictions[superpixel_i]
+			if generate_overlay:
+				# Color the road red for visualization of the prediction
+				if image_predictions[superpixel_i] >= 0.5:
+					image[superpixels_mask == superpixel_i, 1] = image_predictions[superpixel_i]
+					image[superpixels_mask == superpixel_i, 2] = image_predictions[superpixel_i]
 			# Encode the prediction in another image
 			encoded_prediction_image[superpixels_mask == superpixel_i] = image_predictions[superpixel_i]
 
-		imsave(path.join(encoded_overlay_output_dir, "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type)), image)
-		imsave(path.join(encoded_output_dir, "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type)), encoded_prediction_image) #Throws a warning?
+		# Save the images
+		if generate_overlay:
+			imsave(path.join(encoded_overlay_output_dir, "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type)), image)
+
+		imsave(path.join(encoded_output_dir, "{0}_{1}_{2}{3}".format(category, target_type, image_id, file_type)), encoded_prediction_image) #Throws a warning?		
