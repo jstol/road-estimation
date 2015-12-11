@@ -86,7 +86,9 @@ if __name__ == '__main__':
 		print("Encoding image '{0}'".format(file_id))
 
 		image = imread(path.join(example_images_input_path, "{0}{1}".format(file_id, file_type)))
-		encoded_prediction_image = np.zeros((image.shape[0], image.shape[1]), dtype=np.float64)
+		rows = image.shape[0]
+		cols = image.shape[1]
+		encoded_prediction_image = np.zeros((rows, cols), dtype=np.float64)
 
 		superpixels_mask = pixel_maps[file_id]
 		num_superpixels = len(np.unique(superpixels_mask))
@@ -94,14 +96,18 @@ if __name__ == '__main__':
 		image_predictions = all_predictions[ : num_superpixels]
 		all_predictions = all_predictions[num_superpixels : ]
 
-		for superpixel_i in xrange(num_superpixels):
-			if generate_overlay:
-				# Color the road red for visualization of the prediction
-				if image_predictions[superpixel_i] >= 0.5:
-					image[superpixels_mask == superpixel_i, 1] = image_predictions[superpixel_i]
-					image[superpixels_mask == superpixel_i, 2] = image_predictions[superpixel_i]
-			# Encode the prediction in another image
-			encoded_prediction_image[superpixels_mask == superpixel_i] = image_predictions[superpixel_i]
+		# Encode each pixel based on its superpixel prediction 
+		for row_i in xrange(rows):
+			for col_j in xrange(cols):
+				superpixel = superpixels_mask[row_i, col_j]
+				if generate_overlay:
+					# Color the road red for visualization of the prediction
+					if image_predictions[superpixel] >= 0.5:
+						image[row_i, col_j, 1] = image_predictions[superpixel]
+						image[row_i, col_j, 2] = image_predictions[superpixel]
+				
+				# Encode the prediction in another image
+				encoded_prediction_image[row_i, col_j] = image_predictions[superpixel]
 
 		# Save the images
 		if generate_overlay:
