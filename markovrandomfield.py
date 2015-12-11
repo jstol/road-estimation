@@ -384,7 +384,7 @@ print('==============================')
 image_type = np.uint16
 max_val = np.iinfo(image_type).max
 orig_photo = imread('example-predictions/original-photo/um_000042.png')
-prediction_image = imread('example-predictions/encoded/um_road_000042.png', as_grey=True).astype(image_type)
+prediction_image = imread('example-predictions/encoded/um_road_000042-2.png', as_grey=True).astype(image_type)
 image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
 image_pixel_priors = prediction_image/(float(max_val))
 
@@ -432,63 +432,64 @@ imsave('testing-gaussian-filtered-predictions.png', image_pixel_priors)
 
 imsave('testing-updated-predictions-start.png', updated_predictions)
 
-# Find contours at a constant value of 0.01
-contours001 = measure.find_contours(image_pixel_priors, 0.01)
+def run_contour_finder():
+	# Find contours at a constant value of 0.01
+	contours001 = measure.find_contours(image_pixel_priors, 0.01)
 
-# Find contours at a constant value of 0.1
-contours01 = measure.find_contours(image_pixel_priors, 0.1)
+	# Find contours at a constant value of 0.1
+	contours01 = measure.find_contours(image_pixel_priors, 0.1)
 
-# Find contours at a constant value of 0.4
-contours04 = measure.find_contours(image_pixel_priors, 0.4)
+	# Find contours at a constant value of 0.4
+	contours04 = measure.find_contours(image_pixel_priors, 0.4)
 
-# Find contours at a constant value of 0.5
-contours05 = measure.find_contours(image_pixel_priors, 0.5)
+	# Find contours at a constant value of 0.5
+	contours05 = measure.find_contours(image_pixel_priors, 0.5)
 
-# Find contours at a constant value of 0.6
-contours06 = measure.find_contours(image_pixel_priors, 0.6)
+	# Find contours at a constant value of 0.6
+	contours06 = measure.find_contours(image_pixel_priors, 0.6)
 
-# Find contours at a constant value of 0.9
-contours09 = measure.find_contours(image_pixel_priors, 0.9)
+	# Find contours at a constant value of 0.9
+	contours09 = measure.find_contours(image_pixel_priors, 0.9)
 
-# Find contours at a constant value of 0.99
-contours099 = measure.find_contours(image_pixel_priors, 0.99)
-
-
-# Display the image and plot all contours found
-fig, ax = plt.subplots()
-ax.imshow(image_pixel_priors, interpolation='nearest', cmap=plt.cm.gray)
+	# Find contours at a constant value of 0.99
+	contours099 = measure.find_contours(image_pixel_priors, 0.99)
 
 
-for n, contour in enumerate(contours001):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=1)
-
-for n, contour in enumerate(contours01):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
-
-for n, contour in enumerate(contours04):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=3)
-
-for n, contour in enumerate(contours05):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=4)
-
-for n, contour in enumerate(contours06):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=5)
-
-for n, contour in enumerate(contours09):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=6)
+	# Display the image and plot all contours found
+	fig, ax = plt.subplots()
+	ax.imshow(image_pixel_priors, interpolation='nearest', cmap=plt.cm.gray)
 
 
-for n, contour in enumerate(contours099):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=7)
+	for n, contour in enumerate(contours001):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=1)
+
+	for n, contour in enumerate(contours01):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+
+	for n, contour in enumerate(contours04):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=3)
+
+	for n, contour in enumerate(contours05):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=4)
+
+	for n, contour in enumerate(contours06):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=5)
+
+	for n, contour in enumerate(contours09):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=6)
 
 
-for n, contour in enumerate(contours09):
-    ax.plot(contour[:, 1], contour[:, 0], linewidth=5)
+	for n, contour in enumerate(contours099):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=7)
 
-ax.axis('image')
-ax.set_xticks([])
-ax.set_yticks([])
-plt.show()
+
+	for n, contour in enumerate(contours09):
+	    ax.plot(contour[:, 1], contour[:, 0], linewidth=5)
+
+	ax.axis('image')
+	ax.set_xticks([])
+	ax.set_yticks([])
+	plt.show()
 
 def run_img_seg():
 	#edge detector

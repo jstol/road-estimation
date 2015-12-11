@@ -2,7 +2,8 @@
 alg=$1
 params=$2
 param_configuration_subdir=$3
-superpixels_set=(100 1000 5000 10000 15000 20000)
+#superpixels_set=(100 1000 5000 10000 15000 20000)
+superpixels_set=(5000)
 
 results_dir="results/${alg}/${param_configuration_subdir}"
 
