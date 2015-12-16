@@ -11,8 +11,8 @@ params_set=( \
 	'{"n_components": 50}' \
 	'{"n_components": 75}' \
 	'{"n_components": 100}' \
-	'{"n_components": 150}' \
-	'{"n_components": 250}' \
+	# '{"n_components": 150}' \
+	# '{"n_components": 250}' \
 
 )
 start_date=$(date +"%m-%d-%Y-%s")
