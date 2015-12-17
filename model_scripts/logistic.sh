@@ -1,36 +1,34 @@
 #!/usr/bin/env bash
 alg="logistic"
 params_set=( \
-	'{"penalty": "l1", "regularization_term": 0.0}' \
-	'{"penalty": "l1", "regularization_term": 0.000005}' \
-	'{"penalty": "l1", "regularization_term": 0.00005}' \
-	'{"penalty": "l1", "regularization_term": 0.0005}' \
-	'{"penalty": "l1", "regularization_term": 0.005}' \
-	'{"penalty": "l1", "regularization_term": 0.01}' \
-	'{"penalty": "l1", "regularization_term": 0.05}' \
-	'{"penalty": "l1", "regularization_term": 0.1}' \
-	'{"penalty": "l1", "regularization_term": 0.5}' \
-	'{"penalty": "l1", "regularization_term": 1}' \
-	'{"penalty": "l1", "regularization_term": 2}' \
-	'{"penalty": "l1", "regularization_term": 5}' \
-	'{"penalty": "l1", "regularization_term": 10}' \
-	'{"penalty": "l1", "regularization_term": 20}' \
-	'{"penalty": "l1", "regularization_term": 50}' \
-	'{"penalty": "l2", "regularization_term": 0.0}' \
-	'{"penalty": "l2", "regularization_term": 0.000005}' \
-	'{"penalty": "l2", "regularization_term": 0.00005}' \
-	'{"penalty": "l2", "regularization_term": 0.0005}' \
-	'{"penalty": "l2", "regularization_term": 0.005}' \
-	'{"penalty": "l2", "regularization_term": 0.01}' \
-	'{"penalty": "l2", "regularization_term": 0.05}' \
-	'{"penalty": "l2", "regularization_term": 0.1}' \
-	'{"penalty": "l2", "regularization_term": 0.5}' \
-	'{"penalty": "l2", "regularization_term": 1}' \
-	'{"penalty": "l2", "regularization_term": 2}' \
-	'{"penalty": "l2", "regularization_term": 5}' \
-	'{"penalty": "l2", "regularization_term": 10}' \
-	'{"penalty": "l2", "regularization_term": 20}' \
-	'{"penalty": "l2", "regularization_term": 50}' \
+	'{"penalty": "l1", "C": 200000}' \
+	'{"penalty": "l1", "C": 20000}' \
+	'{"penalty": "l1", "C": 2000}' \
+	'{"penalty": "l1", "C": 200}' \
+	'{"penalty": "l1", "C": 100}' \
+	'{"penalty": "l1", "C": 20}' \
+	'{"penalty": "l1", "C": 10}' \
+	'{"penalty": "l1", "C": 2}' \
+	'{"penalty": "l1", "C": 1}' \
+	'{"penalty": "l1", "C": 0.5}' \
+	'{"penalty": "l1", "C": 0.2}' \
+	'{"penalty": "l1", "C": 0.1}' \
+	'{"penalty": "l1", "C": 0.05}' \
+	'{"penalty": "l1", "C": 0.02}' \
+	'{"penalty": "l2", "C": 200000}' \
+	'{"penalty": "l2", "C": 20000}' \
+	'{"penalty": "l2", "C": 2000}' \
+	'{"penalty": "l2", "C": 200}' \
+	'{"penalty": "l2", "C": 100}' \
+	'{"penalty": "l2", "C": 20}' \
+	'{"penalty": "l2", "C": 10}' \
+	'{"penalty": "l2", "C": 2}' \
+	'{"penalty": "l2", "C": 1}' \
+	'{"penalty": "l2", "C": 0.5}' \
+	'{"penalty": "l2", "C": 0.2}' \
+	'{"penalty": "l2", "C": 0.1}' \
+	'{"penalty": "l2", "C": 0.05}' \
+	'{"penalty": "l2", "C": 0.02}' \
 )
 start_date=$(date +"%m-%d-%Y-%s")
 
