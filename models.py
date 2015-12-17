@@ -169,10 +169,10 @@ class LogisticRegressionModel(Model):
 
 		#unpack hyperparameters:
 		penalty = self.hyperparameters['penalty'] #str 'l1' or 'l2'
-		regularization_term = self.hyperparameters['regularization_term'] #float value
+		C = self.hyperparameters['C'] #float value
 
 		#fit model
-		logistic = linear_model.LogisticRegression(penalty= penalty, C=regularization_term)
+		logistic = linear_model.LogisticRegression(penalty= penalty, C=C)
 		logistic.fit(train_inputs, train_targets)
 
 		#save model
