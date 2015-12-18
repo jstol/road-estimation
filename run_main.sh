@@ -40,7 +40,7 @@ do
 		-ov "${results_dir}/prediction_images/${i}sp/train/encoded_overlay" >/dev/null 2>&1
 		# --generate-overlay \
 
-	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/train/encoded/" "kit/data_road/training/divided_data/train" "${run_dir}/pixel_report_${start_date}.csv" "${alg}" "${params}" "train" >> "${pixel_test_results_file}"
+	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/train/encoded/" "kit/data_road/training/divided_data/train" "${run_dir}/pixel_report_${start_date}.csv" "${alg}" "${params}" "train" "${i}" >> "${pixel_test_results_file}"
 
 	printf "\n===================\n" >> "${pixel_test_results_file}"
 	printf "VALID\n" >> "${pixel_test_results_file}"
@@ -55,7 +55,7 @@ do
 		-ov "${results_dir}/prediction_images/${i}sp/valid/encoded_overlay" >/dev/null 2>&1
 		# --generate-overlay \
 
-	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/valid/encoded/" "kit/data_road/training/divided_data/valid" "${run_dir}/pixel_report_${start_date}.csv" "${alg}" "${params}" "valid" >> "${pixel_test_results_file}"
+	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/valid/encoded/" "kit/data_road/training/divided_data/valid" "${run_dir}/pixel_report_${start_date}.csv" "${alg}" "${params}" "valid" "${i}" >> "${pixel_test_results_file}"
 
 	# Write param config to a file
 	echo ${params} > "${results_dir}/params_configuration.txt"
