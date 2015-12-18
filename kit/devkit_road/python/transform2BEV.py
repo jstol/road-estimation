@@ -75,7 +75,7 @@ def main(dataFiles, pathToCalib, outputPath, calib_end  = '.txt'):
         bev.setup(calib_file)
         
         # Read image
-        data = cv2.imread(aFile, cv2.CV_LOAD_IMAGE_UNCHANGED)
+        data = cv2.imread(aFile, cv2.CV_LOAD_IMAGE_UNCHANGED if hasattr(cv2, 'CV_LOAD_IMAGE_UNCHANGED') else cv2.IMREAD_UNCHANGED)
         
         # Compute Birds Eye View
         data_bev = bev.compute(data)
