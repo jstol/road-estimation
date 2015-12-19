@@ -97,6 +97,164 @@ image = img_as_ubyte(road_example_grey)
 plt.show()
 
 
+# Load an example image
+img = img_as_ubyte(road_example_grey)
+
+# Global equalize
+img_rescale = exposure.equalize_hist(img)
+
+# Equalization
+selem = disk(30)
+img_eq = rank.equalize(img, selem=selem)
+
+
+# Display results
+fig = plt.figure(figsize=(8, 5))
+axes = np.zeros((2, 3), dtype=np.object)
+axes[0,0] = plt.subplot(2, 3, 1, adjustable='box-forced')
+axes[0,1] = plt.subplot(2, 3, 2, sharex=axes[0,0], sharey=axes[0,0], adjustable='box-forced')
+axes[0,2] = plt.subplot(2, 3, 3, sharex=axes[0,0], sharey=axes[0,0], adjustable='box-forced')
+axes[1,0] = plt.subplot(2, 3, 4)
+axes[1,1] = plt.subplot(2, 3, 5)
+axes[1,2] = plt.subplot(2, 3, 6)
+
+ax_img, ax_hist, ax_cdf = plot_img_and_hist(img, axes[:, 0])
+ax_img.set_title('Low contrast image')
+ax_hist.set_ylabel('Number of pixels')
+
+ax_img, ax_hist, ax_cdf = plot_img_and_hist(img_rescale, axes[:, 1])
+ax_img.set_title('Global equalise')
+
+ax_img, ax_hist, ax_cdf = plot_img_and_hist(img_eq, axes[:, 2])
+ax_img.set_title('Local equalize')
+ax_cdf.set_ylabel('Fraction of total intensity')
+
+
+# prevent overlap of y-axis labels
+fig.subplots_adjust(wspace=0.4)
+plt.show()
+
+
+#def run_HOG():
+image = img_rescale
+
+fd, hog_image = hog(image, orientations=8, pixels_per_cell=(16, 16),
+                    cells_per_block=(1, 1), visualise=True)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
+
+ax1.axis('off')
+ax1.imshow(image, cmap=plt.cm.gray)
+ax1.set_title('Input image')
+ax1.set_adjustable('box-forced')
+
+# Rescale histogram for better display
+hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 0.02))
+
+ax2.axis('off')
+ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
+ax2.set_title('Histogram of Oriented Gradients')
+ax1.set_adjustable('box-forced')
+plt.show()
+
+
+#entropy
+image = img_rescale
+fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(10, 4), sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
+
+img0 = ax0.imshow(image, cmap=plt.cm.gray)
+ax0.set_title('Image')
+ax0.axis('off')
+fig.colorbar(img0, ax=ax0)
+
+img1 = ax1.imshow(entropy(image, disk(5)), cmap=plt.cm.jet)
+ax1.set_title('Entropy')
+ax1.axis('off')
+fig.colorbar(img1, ax=ax1)
+
+plt.show()
+
+
+
+#edge detector
+# Compute the Canny filter for two values of sigma
+im = img_rescale
+edges1 = feature.canny(im)
+edges2 = feature.canny(im, sigma=3)
+
+# display results
+fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True)
+
+ax1.imshow(im, cmap=plt.cm.jet)
+ax1.axis('off')
+ax1.set_title('noisy image', fontsize=20)
+
+ax2.imshow(edges1, cmap=plt.cm.gray)
+ax2.axis('off')
+ax2.set_title('Canny filter, $\sigma=1$', fontsize=20)
+
+ax3.imshow(edges2, cmap=plt.cm.gray)
+ax3.axis('off')
+ax3.set_title('Canny filter, $\sigma=3$', fontsize=20)
+
+fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9,
+                    bottom=0.02, left=0.02, right=0.98)
+
+plt.show()
+
+#segementation
+fill_road = ndi.binary_fill_holes(edges1)
+
+fig, ax = plt.subplots(figsize=(4, 3))
+ax.imshow(fill_road, cmap=plt.cm.gray, interpolation='nearest')
+ax.axis('off')
+ax.set_title('Filling the holes')
+
+plt.show()
+
+markers = np.zeros_like(fill_road)
+markers[50, 500] = 1
+markers[300, 10] = 2
+
+fig, ax = plt.subplots(figsize=(4, 3))
+ax.imshow(markers, cmap=plt.cm.spectral, interpolation='nearest')
+ax.axis('off')
+ax.set_title('markers')
+
+plt.show()
+
+#find local max
+im = img_as_float(road_example_grey)
+
+# image_max is the dilation of im with a 20*20 structuring element
+# It is used within peak_local_max function
+image_max = ndi.maximum_filter(im, size=20, mode='constant')
+
+# Comparison between image_max and im to find the coordinates of local maxima
+coordinates = peak_local_max(im, min_distance=20)
+
+# display results
+fig, ax = plt.subplots(1, 3, figsize=(8, 3), sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
+ax1, ax2, ax3 = ax.ravel()
+ax1.imshow(im, cmap=plt.cm.gray)
+ax1.axis('off')
+ax1.set_title('Original')
+
+ax2.imshow(image_max, cmap=plt.cm.gray)
+ax2.axis('off')
+ax2.set_title('Maximum filter')
+
+ax3.imshow(im, cmap=plt.cm.gray)
+ax3.autoscale(False)
+ax3.plot(coordinates[:, 1], coordinates[:, 0], 'r.')
+ax3.axis('off')
+ax3.set_title('Peak local max')
+
+fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9,
+                    bottom=0.02, left=0.02, right=0.98)
+
+plt.show()
+
 
 
 
@@ -505,162 +663,3 @@ def plot_img_and_hist(img, axes, bins=256):
     ax_cdf.plot(bins, img_cdf, 'r')
 
     return ax_img, ax_hist, ax_cdf
-
-
-# Load an example image
-img = img_as_ubyte(road_example_grey)
-
-# Global equalize
-img_rescale = exposure.equalize_hist(img)
-
-# Equalization
-selem = disk(30)
-img_eq = rank.equalize(img, selem=selem)
-
-
-# Display results
-fig = plt.figure(figsize=(8, 5))
-axes = np.zeros((2, 3), dtype=np.object)
-axes[0,0] = plt.subplot(2, 3, 1, adjustable='box-forced')
-axes[0,1] = plt.subplot(2, 3, 2, sharex=axes[0,0], sharey=axes[0,0], adjustable='box-forced')
-axes[0,2] = plt.subplot(2, 3, 3, sharex=axes[0,0], sharey=axes[0,0], adjustable='box-forced')
-axes[1,0] = plt.subplot(2, 3, 4)
-axes[1,1] = plt.subplot(2, 3, 5)
-axes[1,2] = plt.subplot(2, 3, 6)
-
-ax_img, ax_hist, ax_cdf = plot_img_and_hist(img, axes[:, 0])
-ax_img.set_title('Low contrast image')
-ax_hist.set_ylabel('Number of pixels')
-
-ax_img, ax_hist, ax_cdf = plot_img_and_hist(img_rescale, axes[:, 1])
-ax_img.set_title('Global equalise')
-
-ax_img, ax_hist, ax_cdf = plot_img_and_hist(img_eq, axes[:, 2])
-ax_img.set_title('Local equalize')
-ax_cdf.set_ylabel('Fraction of total intensity')
-
-
-# prevent overlap of y-axis labels
-fig.subplots_adjust(wspace=0.4)
-plt.show()
-
-
-#def run_HOG():
-image = img_rescale
-
-fd, hog_image = hog(image, orientations=8, pixels_per_cell=(16, 16),
-                    cells_per_block=(1, 1), visualise=True)
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
-
-ax1.axis('off')
-ax1.imshow(image, cmap=plt.cm.gray)
-ax1.set_title('Input image')
-ax1.set_adjustable('box-forced')
-
-# Rescale histogram for better display
-hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 0.02))
-
-ax2.axis('off')
-ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
-ax2.set_title('Histogram of Oriented Gradients')
-ax1.set_adjustable('box-forced')
-plt.show()
-
-
-#entropy
-image = img_rescale
-fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(10, 4), sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
-
-img0 = ax0.imshow(image, cmap=plt.cm.gray)
-ax0.set_title('Image')
-ax0.axis('off')
-fig.colorbar(img0, ax=ax0)
-
-img1 = ax1.imshow(entropy(image, disk(5)), cmap=plt.cm.jet)
-ax1.set_title('Entropy')
-ax1.axis('off')
-fig.colorbar(img1, ax=ax1)
-
-plt.show()
-
-
-
-#edge detector
-# Compute the Canny filter for two values of sigma
-im = img_rescale
-edges1 = feature.canny(im)
-edges2 = feature.canny(im, sigma=3)
-
-# display results
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True)
-
-ax1.imshow(im, cmap=plt.cm.jet)
-ax1.axis('off')
-ax1.set_title('noisy image', fontsize=20)
-
-ax2.imshow(edges1, cmap=plt.cm.gray)
-ax2.axis('off')
-ax2.set_title('Canny filter, $\sigma=1$', fontsize=20)
-
-ax3.imshow(edges2, cmap=plt.cm.gray)
-ax3.axis('off')
-ax3.set_title('Canny filter, $\sigma=3$', fontsize=20)
-
-fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9,
-                    bottom=0.02, left=0.02, right=0.98)
-
-plt.show()
-
-#segementation
-fill_road = ndi.binary_fill_holes(edges1)
-
-fig, ax = plt.subplots(figsize=(4, 3))
-ax.imshow(fill_road, cmap=plt.cm.gray, interpolation='nearest')
-ax.axis('off')
-ax.set_title('Filling the holes')
-
-plt.show()
-
-markers = np.zeros_like(fill_road)
-markers[50, 500] = 1
-markers[300, 10] = 2
-
-fig, ax = plt.subplots(figsize=(4, 3))
-ax.imshow(markers, cmap=plt.cm.spectral, interpolation='nearest')
-ax.axis('off')
-ax.set_title('markers')
-
-plt.show()
-
-#find local max
-im = img_as_float(road_example_grey)
-
-# image_max is the dilation of im with a 20*20 structuring element
-# It is used within peak_local_max function
-image_max = ndi.maximum_filter(im, size=20, mode='constant')
-
-# Comparison between image_max and im to find the coordinates of local maxima
-coordinates = peak_local_max(im, min_distance=20)
-
-# display results
-fig, ax = plt.subplots(1, 3, figsize=(8, 3), sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
-ax1, ax2, ax3 = ax.ravel()
-ax1.imshow(im, cmap=plt.cm.gray)
-ax1.axis('off')
-ax1.set_title('Original')
-
-ax2.imshow(image_max, cmap=plt.cm.gray)
-ax2.axis('off')
-ax2.set_title('Maximum filter')
-
-ax3.imshow(im, cmap=plt.cm.gray)
-ax3.autoscale(False)
-ax3.plot(coordinates[:, 1], coordinates[:, 0], 'r.')
-ax3.axis('off')
-ax3.set_title('Peak local max')
-
-fig.subplots_adjust(wspace=0.02, hspace=0.02, top=0.9,
-                    bottom=0.02, left=0.02, right=0.98)
-
-plt.show()
