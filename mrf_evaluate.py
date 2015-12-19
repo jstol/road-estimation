@@ -463,6 +463,7 @@ for iter_i in iteration_list:
 		
 
         if temperature == 'blur': #if we only want to output the blurred predictions
+            print'hey'
             for file_name, predicted_labels in mrf_model_dic.iteritems():
                 print 'Blur - file_name:'
                 print(file_name)
@@ -475,6 +476,7 @@ for iter_i in iteration_list:
 
 
         else: #this is actually temperature
+            print 'hello'
             for file_name, predicted_labels in mrf_model_dic.iteritems():
                 print 'MCMC - file_name:'
                 print(file_name)
