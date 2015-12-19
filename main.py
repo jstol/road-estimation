@@ -46,7 +46,7 @@ def run_feature_importance():
 
 # Global vars
 available_models = ['knn', 'logistic', 'svm', 'mog', 'neural_net', 'decision_tree', 'randomforest', 'extratrees']
-available_ensemble_methods = ['adaboost', 'bagging']
+available_ensemble_methods = ['adaboost', 'bagging' , '']
 
 # Set up command-line arguments
 _argument_parser = argparse.ArgumentParser(
