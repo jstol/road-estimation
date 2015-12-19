@@ -4,6 +4,26 @@ import numpy as np
 from datetime import datetime
 from skimage.io import imsave
 
+
+#general
+import numpy as np
+import matplotlib.pyplot as plt
+import pickle
+from sklearn.externals import joblib
+import math
+import random
+
+#image processing
+from skimage.io import imread_collection, imread, imshow, imsave
+from skimage import img_as_float, img_as_uint
+from scipy.ndimage.filters import gaussian_filter
+import matplotlib.pyplot as plt
+
+#markov random field
+from markovrandomfield import pixelmap
+
+
+
 # STUFF NEEDED FROM THE DEV KIT -----------------------------------------------------------
 # Some class they make use of
 class dataStructure: 
@@ -356,11 +376,11 @@ dt = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
 summary_file = "mrf_evaluate_results/mrf_report_{0}.csv".format(dt)
 
 # Where the encoded prediction images are
-original_prediction_dir = "results/nn/12-13-2015-1450061732/1/prediction_images/5000sp/valid/encoded"
+original_prediction_dir = "results/initial_predictions_mrf/neural_net_2layer_25_10/prediction_images/5000sp/valid/encoded"
 # The training image directory - must hold "gt_image_2"
-train_dir = "kit/data_road/training/divided_data/valid"
+train_dir = "results/initial_predictions_mrf/neural_net_2layer_25_10/prediction_images/5000sp/valid"
 # Where to store (changing) MRF images
-mrf_image_dir = "mrf_images/{0}".format(dt)
+mrf_image_dir = "results/mrf_images/{0}".format(dt)
 
 # Variables used purely for the CSV report
 model_name = "mlp"
@@ -369,7 +389,49 @@ data_set = "valid"
 superpixels = 5000
 
 # Iteration config
-iteration_list = [(0.1,1), (0.2,1), (0.5,4), (0.7,4), (1,1), (2,1), (4,1)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
+#iteration_list = [(0.1,1), (0.2,1), (0.5,4), (0.7,4), (1,1), (2,1), (4,1)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
+
+iteration_list = [('blur', 2), (1.5, 2), (1.0, 2)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
+
+
+mrf_model_dic = {}
+for filename in os.listdir(original_prediction_dir):
+    if fnmatch.fnmatch(filename, '*.png'):
+        
+        print 'Loading image:'
+
+        image_type = np.uint16
+        max_val = np.iinfo(image_type).max
+        prediction_image = imread(os.path.join(original_prediction_dir, filename), as_grey=True).astype(image_type)
+        image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
+        image_pixel_priors = prediction_image/(float(max_val))
+
+        #Apply pre-processing to image
+        image_pixel_priors = gaussian_filter(image_pixel_priors, 5)
+
+        # print('Bilateral Filter')
+        # image_pixel_priors = denoise_bilateral(image_pixel_priors, sigma_range=0.05, sigma_spatial=15)
+
+        image_pixel_priors_flat = image_pixel_priors.ravel()
+
+        #
+        print 'Testing - Max and Min Value'
+        print(np.max(image_pixel_priors_flat))
+        print(np.min(image_pixel_priors_flat))
+
+        #===================================
+        #script for initiating the MRF class
+        #===================================
+
+        print 'initialize MRF'
+        predicted_labels = pixelmap()
+
+        predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, prediction_image.shape[0], prediction_image.shape[1])
+        predicted_labels.set_conn_energy(0.5) #this is required to set the strength of connections ()
+        predicted_labels.init_energy()
+
+        mrf_model_dic[filename] = predicted_labels
+
 
 for iter_i in iteration_list:
 	print "Iteration {0}".format(iter_i)
@@ -378,13 +440,13 @@ for iter_i in iteration_list:
 	updates = iter_i[1]	# num of times to do MRF updaates
 
 	for update_j in xrange(updates):
-		# Read images from either the MRF image directory or original predictions directory
-		if not os.path.exists(mrf_image_dir):
-			print "Reading from original predictions"
-			working_image_dir = original_prediction_dir
-		else:
-			print "Reading from MRF file"
-			working_image_dir = mrf_image_dir
+		# # Read images from either the MRF image directory or original predictions directory
+		# if not os.path.exists(mrf_image_dir):
+		# 	print "Reading from original predictions"
+		# 	working_image_dir = original_prediction_dir
+		# else:
+		# 	print "Reading from MRF file"
+		# 	working_image_dir = mrf_image_dir
 
 		# Make the MRF image directory if it doesn't exist already
 		if not os.path.exists(mrf_image_dir):
@@ -392,15 +454,49 @@ for iter_i in iteration_list:
 
 		# Read in either the orignal predictions or the current MRF images and do work on them
 		print "Doing MRF work, writing out images to the MRF folder"
-		for filename in os.listdir(working_image_dir):
-			if fnmatch.fnmatch(filename, '*.png'):
-				image = cv2.imread(os.path.join(working_image_dir, filename), 0)
+		# for filename in os.listdir(working_image_dir):
+		# 	if fnmatch.fnmatch(filename, '*.png')
+		# 		image = cv2.imread(os.path.join(working_image_dir, filename), 0)
 
 				# YUAN - DO YOUR WORK HERE!!!!!!!!!
 					# CHANGE `image` AS NEEDED
-				#
+		
 
-				imsave(os.path.join(mrf_image_dir, filename), image)
+        if temperature == 'blur': #if we only want to output the blurred predictions
+            for file_name, predicted_labels in mrf_model_dic.iteritems():
+                print 'Blur - file_name:'
+                print(file_name)
+                print 'saving to file'
+                image = np.reshape(predicted_labels.pixel_priors, [predicted_labels.height, predicted_labels.width])
+                imsave(os.path.join(mrf_image_dir, file_name), image)
 
-		print "Evaluating MRF results"
-		evaluate(working_image_dir, train_dir, summary_file, model_name, config_string, data_set, superpixels)
+                #build configuration string
+                config_string = ("Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", " + "blur")
+
+
+        else: #this is actually temperature
+            for file_name, predicted_labels in mrf_model_dic.iteritems():
+                print 'MCMC - file_name:'
+                print(file_name)
+                print 'temperature:'
+                print(temperature)
+
+                predicted_labels.mcmc_rand_update(1/temperature)
+                print(predicted_labels.total_energy)
+                predicted_labels.mcmc_block_flip_update(1/temperature)
+                print(predicted_labels.total_energy)
+                predicted_labels.mcmc_rand_update(1/temperature)
+                print(predicted_labels.total_energy)
+                predicted_labels.mcmc_update(1/temperature)
+                print(predicted_labels.total_energy)
+
+                print 'Saving to file'
+                image = np.reshape(predicted_labels.pixel_labels, [predicted_labels.height, predicted_labels.width])
+                imsave(os.path.join(mrf_image_dir, file_name), image)
+
+
+            #build configuration string
+            config_string = "Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", temperature: " + ('%.4f' % (temperature)) + ", updates: " + ('%.1f' % (update_j))
+
+        print "Evaluating MRF results"
+        evaluate(mrf_image_dir, train_dir, summary_file, model_name, config_string, data_set, superpixels)

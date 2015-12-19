@@ -16,6 +16,7 @@ from skimage.io import imread_collection, imread, imshow, imsave
 from skimage import img_as_float, img_as_uint
 from scipy.ndimage.filters import gaussian_filter
 import matplotlib.pyplot as plt
+import cv2
 
 #markov random field
 from markovrandomfield import pixelmap
@@ -33,8 +34,8 @@ print('==============================')
 
 image_type = np.uint16
 max_val = np.iinfo(image_type).max
-orig_photo = imread('example-predictions/original-photo/um_000042.png')
-prediction_image = imread('example-predictions/encoded/um_road_000042-4.png', as_grey=True).astype(image_type)
+#orig_photo = imread('example-predictions/original-photo/umm_000080.png')
+prediction_image = imread('example-predictions/encoded/umm_road_000080.png', grey=True).astype(image_type)
 image_height, image_width = prediction_image.shape[0], prediction_image.shape[1]
 image_pixel_priors = prediction_image/(float(max_val))
 
@@ -55,7 +56,6 @@ print('Testing - Max and Min Value')
 print(np.max(image_pixel_priors_flat))
 print(np.min(image_pixel_priors_flat))
 
-predicted_labels = pixelmap()
 
 #===================================
 #script for initiating the MRF class
@@ -65,6 +65,7 @@ print('============================')
 print('Initializing MRF:')
 print('============================')
 
+predicted_labels = pixelmap()
 
 predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, prediction_image.shape[0], prediction_image.shape[1])
 predicted_labels.set_conn_energy(0.5) #this is required to set the strength of connections ()
