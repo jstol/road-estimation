@@ -38,7 +38,7 @@ class dataStructure:
 #########################################################################
 # function that does the evaluation
 #########################################################################
-def main(result_dir, train_dir, summary_file, model_name, config_string, data_set, debug = False):
+def main(result_dir, train_dir, summary_file, model_name, config_string, data_set, superpixels, debug = False):
     '''
     main method of evaluateRoad
     :param result_dir: directory with the result propability maps, e.g., /home/elvis/kitti_road/my_results
@@ -138,7 +138,7 @@ def main(result_dir, train_dir, summary_file, model_name, config_string, data_se
                 print '%s:\n\t%4.2f ' %(prop, metrics_dict[prop],)
             
             # Write to summary file
-            fieldnames = ['algorithm', 'configuration', 'data_set', 'category'] + dataStructure.eval_propertyList
+            fieldnames = ['algorithm', 'configuration', 'superpixels', 'data_set', 'category'] + dataStructure.eval_propertyList
             if os.path.isfile(summary_file):
                 report = open(summary_file, 'a')
                 writer = csv.DictWriter(report, fieldnames=fieldnames)
@@ -153,6 +153,7 @@ def main(result_dir, train_dir, summary_file, model_name, config_string, data_se
 
             metrics_dict['algorithm'] = model_name
             metrics_dict['configuration'] = config_string
+            metrics_dict['superpixels'] = superpixels
             metrics_dict['data_set'] = data_set
             metrics_dict['category'] = cat
 
@@ -176,7 +177,7 @@ def main(result_dir, train_dir, summary_file, model_name, config_string, data_se
 if __name__ == "__main__":
 
     # check for correct number of arguments.
-    if len(sys.argv)!=7:
+    if len(sys.argv)!=8:
         print "Usage: python evaluateRoad.py <result_dir> <gt_dir> <summary_file> <config_string> <data_set>"
         print "<result_dir> = directory with the result propability maps, e.g., /home/elvis/kitti_road/my_results"
         print "<gt_dir> = training directory (has to contain gt_image_2)  e.g., /home/elvis/kitti_road/training"
@@ -184,6 +185,7 @@ if __name__ == "__main__":
         print "<model_name> = name of the algorithm used e.g., 'knn'"
         print "<config_string> = string used to identify the model's configuration e.g., '{\"k\": 1}' or 'model1'"
         print "<data_set> = data set being tested e.g., 'test' or 'valid'"
+        print "<superpixels> = the number of superpixels being tested"
         sys.exit(1)
       
     # parse parameters
@@ -193,8 +195,9 @@ if __name__ == "__main__":
     model_name = sys.argv[4]
     config_string = sys.argv[5]
     data_set = sys.argv[6]
+    superpixels = sys.argv[7]
 
     # Excecute main fun 
-    main(result_dir, gt_dir, summary_file, model_name, config_string, data_set)
+    main(result_dir, gt_dir, summary_file, model_name, config_string, data_set, superpixels)
 
 

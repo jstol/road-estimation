@@ -357,10 +357,10 @@ class EnsembleModel(Model):
 	def logistic_init(self):
 		#unpack hyperparameters:
 		penalty = self.hyperparameters['penalty'] #str 'l1' or 'l2'
-		regularization_term = self.hyperparameters['regularization_term'] #float value
+		C = self.hyperparameters['C'] #float value
 
 		#fit model
-		logistic_classifier = linear_model.LogisticRegression(penalty= penalty, C=regularization_term)
+		logistic_classifier = linear_model.LogisticRegression(penalty= penalty, C=C)
 
 		return logistic_classifier
 

@@ -46,7 +46,7 @@ def run_feature_importance():
 
 # Global vars
 available_models = ['knn', 'logistic', 'svm', 'mog', 'neural_net', 'decision_tree', 'randomforest', 'extratrees']
-available_ensemble_methods = ['adaboost', 'bagging']
+available_ensemble_methods = ['adaboost', 'bagging' , '']
 
 # Set up command-line arguments
 _argument_parser = argparse.ArgumentParser(
@@ -285,7 +285,7 @@ if __name__ == '__main__':
 		f.write("Validation f1 score:\n\t{0}\n".format(valid_f1_score))
 
 		# Also write to the summary file
-		fieldnames = ['algorithm', 'configuration', 'data_set', 'train_time', 'predict_time', 'ce', 'classification_rate', 'precision', 'recall', 'f1']
+		fieldnames = ['algorithm', 'configuration', 'model_file', 'data_set', 'train_time', 'predict_time', 'ce', 'classification_rate', 'precision', 'recall', 'f1']
 		
 		if os.path.isfile(summary_file):
 			report = open(summary_file, 'a')
@@ -299,6 +299,7 @@ if __name__ == '__main__':
 		writer.writerow({
 			'algorithm': model_name,
 			'configuration': params_json,
+			'model_file': model_file,
 			'data_set': 'train',
 			'train_time': train_time,
 			'predict_time': predict_train_time,
@@ -312,6 +313,7 @@ if __name__ == '__main__':
 		writer.writerow({
 			'algorithm': model_name,
 			'configuration': params_json,
+			'model_file': model_file,
 			'data_set': 'valid',
 			'train_time': train_time,
 			'predict_time': predict_valid_time,

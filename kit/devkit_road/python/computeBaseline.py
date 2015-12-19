@@ -66,7 +66,7 @@ def main(train_dir, test_dir, outputDir):
         # Loop over all gt-files for particular category
         for trainData_fileName_gt in trainData_fileList_gt:
             
-            full_gt = cv2.imread(trainData_fileName_gt, cv2.CV_LOAD_IMAGE_UNCHANGED)
+            full_gt = cv2.imread(trainData_fileName_gt, cv2.CV_LOAD_IMAGE_UNCHANGED if hasattr(cv2, 'CV_LOAD_IMAGE_UNCHANGED') else cv2.IMREAD_UNCHANGED)
             #attention: OpenCV reads in as BGR, so first channel has road GT
             trainData_file_gt =  full_gt[:,:,0] > 0
             #validArea = full_gt[:,:,2] > 0
