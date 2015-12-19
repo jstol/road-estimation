@@ -7,7 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import argparse
 from os import path, makedirs
 # Third party modules
-from skimage.io import imread_collection, imread, imsave
+from skimage.io import imread, imsave
 import numpy as np
 
 file_type = '.png'
