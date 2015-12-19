@@ -391,7 +391,7 @@ superpixels = 5000
 # Iteration config
 #iteration_list = [(0.1,1), (0.2,1), (0.5,4), (0.7,4), (1,1), (2,1), (4,1)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
 
-iteration_list = [('blur', 2), (1.5, 2), (1.0, 2)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
+iteration_list = [('blur', 1), (2.0, 10), (1.5, 10), (1.0, 10), (0.8, 10), (0.7, 10), (0.6, 10), (0.5, 10), (0.4, 10), (0.3, 10), (0.2, 10), (0.1, 10)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
 
 
 mrf_model_dic = {}
