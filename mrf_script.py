@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 from markovrandomfield import pixelmap
 
 
+
+
 print('==============================')
 print('Testing')
 print('==============================')
@@ -92,7 +94,7 @@ print('============================')
 print('MCMC Iterations ... ')
 print('============================')
 
-for t in [2.0, 1.5, 1.0]:
+for t in [2.0, 1.5, 1.0, 0.5, 0.2]:
 
 	print('Temperature: %f' %(t))
 
