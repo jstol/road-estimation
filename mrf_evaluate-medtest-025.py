@@ -385,6 +385,7 @@ mrf_image_dir = "results/mrf_images/{0}".format(dt)
 # Variables used purely for the CSV report
 model_name = "mlp"
 config_string = "YUAN'S CONFIGURATION STRING"
+script_name = "mid-025"
 data_set = "valid"
 superpixels = 5000
 
@@ -471,7 +472,7 @@ for iter_i in iteration_list:
                 imsave(os.path.join(mrf_image_dir, file_name), image)
 
                 #build configuration string
-                config_string = ("Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", " + "blur")
+                config_string = (script_name+"Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", " + "blur")
 
 
         else: #this is actually temperature
@@ -496,7 +497,7 @@ for iter_i in iteration_list:
 
 
             #build configuration string
-            config_string = "Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", temperature: " + ('%.4f' % (temperature)) + ", updates: " + ('%.1f' % (update_j))
+            config_string = script_name+"Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", temperature: " + ('%.4f' % (temperature)) + ", updates: " + ('%.1f' % (update_j))
 
         print "Evaluating MRF results"
         evaluate(mrf_image_dir, train_dir, summary_file, model_name, config_string, data_set, superpixels)
