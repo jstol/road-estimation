@@ -200,11 +200,7 @@ class pixelmap:
 		pixel_labels = self.pixel_labels
 		pixel_priors = self.pixel_priors
 
-		pixel_priors_t1 = 0.5*np.ones(pixel_priors.shape)
-		pixel_priors_t0 = 0.5*np.ones(pixel_priors.shape)
-		pixel_priors_t1[pixel_labels == 1] = pixel_priors[pixel_labels == 1]
-		pixel_priors_t0[pixel_labels == 0] = pixel_priors[pixel_labels == 0]
-		sum_pixel_lvl_energy = -(np.dot(pixel_labels, np.log(pixel_priors_t1)) + np.dot((1-pixel_labels), np.log(1- pixel_priors_t0)))
+		sum_pixel_lvl_energy = -(np.dot(2*pixel_labels-1, 2*pixel_priors-1))
 
 		total_energy = global_energy+sum_pixel_lvl_energy
 
@@ -229,15 +225,11 @@ class pixelmap:
 		global_energy_change = new_global_energy - old_global_energy
 
 		#compute the change in local component of energy
-		if pixel_label == 1:
-			old_local_energy = (-1)*np.log(pixel_lvl_prior)
-			new_local_energy = (-1)*np.log(1-pixel_lvl_prior)
-		elif pixel_label == 0:
-			old_local_energy = (-1)*np.log(1-pixel_lvl_prior)
-			new_local_energy = (-1)*np.log(pixel_lvl_prior)
+		old_local_energy = -(2*pixel_label-1)*(2*pixel_lvl_prior-1)
+		new_local_energy = -(2*proposed_pixel_label-1)*(2*pixel_lvl_prior-1)
 
-		else:
-			print('error: unexpected label value')
+		# else:
+		# 	print('error: unexpected label value')
 
 
 		#compute change
@@ -330,12 +322,8 @@ class pixelmap:
 			new_local_energy = 0
 
 			#compute the change in local component of energy
-			if pixel_label == 1:
-				old_local_energy = (-1)*np.log(pixel_lvl_prior)
-				new_local_energy = (-1)*np.log(1-pixel_lvl_prior)
-			elif pixel_label == 0:
-				old_local_energy = (-1)*np.log(1-pixel_lvl_prior)
-				new_local_energy = (-1)*np.log(pixel_lvl_prior)
+			old_local_energy = -(2*pixel_label-1)*(2*pixel_lvl_prior-1)
+			new_local_energy = -(2*proposed_pixel_label-1)*(2*pixel_lvl_prior-1)
 
 
 			#compute change
@@ -388,6 +376,8 @@ class pixelmap:
 		for t in xrange(2*len(self.uncertain_pixel_list)):
 			pixel_idx = random.choice(self.uncertain_pixel_list)
 			self.mcmc_one_block_flip(pixel_idx, temperature)
+
+
 
 
 
