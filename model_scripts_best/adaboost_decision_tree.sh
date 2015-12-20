@@ -13,7 +13,7 @@ count=1
 for params in "${params_set[@]}"
 do
 	results_subdir="${start_date}/${count}"
-	./run_main.sh "${alg}" "${params}" "${results_subdir}" "${start_date}" "${ensemble_method}"
+	./run_main_best.sh "${alg}" "${params}" "${results_subdir}" "${start_date}" "${ensemble_method}"
 
 	let count++
 done
