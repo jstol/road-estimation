@@ -1,0 +1,38 @@
+SUPERPIXEL LEVEL RESULTS
+
+logistic - trained on superpixel_data/train_examples_1000sp.npz
+
+Training time (s): 
+	0.917020082474
+
+===================
+TRAINING
+===================
+Training prediction time (s):
+	0.0110437870026
+Training CE:
+	0.249634001612
+Training classification rate:
+	0.878060128848
+Training precision:
+	0.687429588981
+Training recall:
+	0.615014468251
+Training f1 score:
+	0.324604454817
+
+===================
+VALID
+===================
+Valid prediction time (s):
+	0.00415301322937
+Validation CE:
+	0.239137209111
+Validation classification rate:
+	0.884540929204
+Validation precision:
+	0.690855704698
+Validation recall:
+	0.638372093023
+Validation f1 score:
+	0.331788879936
