@@ -5,6 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import numpy as np
+from sklearn.externals import joblib
 
 def predict(test_inputs, model_name):
 		#force test inputs to be np arrays:
