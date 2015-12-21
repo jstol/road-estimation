@@ -12,7 +12,7 @@ def predict(test_inputs, model_name):
 		test_inputs = np.array(test_inputs)
 
 		#load model
-		mlp_model = joblib.load((model_name+'.pkl'))
+		mlp_model = joblib.load((model_name))
 
 		#make predictions
 		test_pred = np.array(mlp_model.predict_proba(test_inputs))
