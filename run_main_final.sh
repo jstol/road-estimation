@@ -26,12 +26,12 @@ echo "Encoding test predictions"
 python encode_predictions.py \
 	-m "superpixel_data/test_superpixels_map_${i}sp.npz" \
 	-i "${results_dir}/predictions/${alg}_${i}sp_test.npz" \
-	-e "kit/data_road/testing/divided_data/test/image_2" \
+	-e "kit/data_road/training/divided_data/test/image_2" \
 	-o "${results_dir}/prediction_images/${i}sp/test/encoded" \
 	--generate-overlay \
 	-ov "${results_dir}/prediction_images/${i}sp/test/encoded_overlay" >/dev/null 2>&1
 
-python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/test/encoded/" "kit/data_road/testing/divided_data/test" "${run_dir}/pixel_report_${start_date}.csv" "${alg}" "${params}" "test" "${i}" >> "${pixel_test_results_file}"
+python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/test/encoded/" "kit/data_road/training/divided_data/test" "${run_dir}/pixel_report_${start_date}.csv" "${alg}" "${params}" "test" "${i}" >> "${pixel_test_results_file}"
 
 # Write param config to a file
 echo ${params} > "${results_dir}/params_configuration.txt"
