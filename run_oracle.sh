@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 alg="oracle"
 params="ORACLE"
-start_date=$4
+start_date=$(date +"%m-%d-%Y-%s")
 superpixels_set=(100 1000 5000 10000 15000 20000)
 
 run_dir="oracle_results"
