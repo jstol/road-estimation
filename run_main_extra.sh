@@ -4,7 +4,7 @@ params=$2
 param_configuration_subdir=$3
 start_date=$4
 ensemble_method=$5
-superpixels_set=(100 1000 5000)
+superpixels_set=(100 1000 5000 10000)
 
 run_dir="best_results/${ensemble_method}${alg}"
 results_dir="${run_dir}/${param_configuration_subdir}"

@@ -385,15 +385,15 @@ mrf_image_dir = "results/mrf_images/{0}".format(dt)
 # Variables used purely for the CSV report
 model_name = "mlp"
 config_string = "YUAN'S CONFIGURATION STRING"
+script_name = "largest-025"
 data_set = "valid"
 superpixels = 5000
 
 # Iteration config
 #iteration_list = [(0.1,1), (0.2,1), (0.5,4), (0.7,4), (1,1), (2,1), (4,1)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
 
-iteration_list = [('blur', 1), (1.0, 1)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
+iteration_list = [('blur', 1), (2.0, 10), (1.5, 10), (1.0, 10), (0.8, 10), (0.7, 10), (0.6, 10), (0.5, 10), (0.4, 10), (0.3, 10), (0.2, 10), (0.1, 10)] # not too sure how you want to do this - first number is temp and second is number of MRF updates
 
-evaluate(original_prediction_dir, train_dir, summary_file, model_name, config_string, data_set, superpixels)
 
 mrf_model_dic = {}
 for filename in os.listdir(original_prediction_dir):
@@ -428,7 +428,7 @@ for filename in os.listdir(original_prediction_dir):
         predicted_labels = pixelmap()
 
         predicted_labels.load_superpixel_classifier_predictions(image_pixel_priors_flat, prediction_image.shape[0], prediction_image.shape[1])
-        predicted_labels.set_conn_energy(0.5) #this is required to set the strength of connections ()
+        predicted_labels.set_conn_energy(0.25) #this is required to set the strength of connections ()
         predicted_labels.init_energy()
 
         mrf_model_dic[filename] = predicted_labels
@@ -472,7 +472,7 @@ for iter_i in iteration_list:
                 imsave(os.path.join(mrf_image_dir, file_name), image)
 
                 #build configuration string
-                config_string = ("Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", " + "blur")
+                config_string = (script_name + ", Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", " + "blur")
 
 
         else: #this is actually temperature
@@ -497,7 +497,7 @@ for iter_i in iteration_list:
 
 
             #build configuration string
-            config_string = "Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", temperature: " + ('%.4f' % (temperature)) + ", updates: " + ('%.1f' % (update_j))
+            config_string = script_name + "Connection_strength: " + ('%.4f' % (predicted_labels.conn_energy)) + ", temperature: " + ('%.4f' % (temperature)) + ", updates: " + ('%.1f' % (update_j))
 
         print "Evaluating MRF results"
         evaluate(mrf_image_dir, train_dir, summary_file, model_name, config_string, data_set, superpixels)

@@ -5,12 +5,12 @@ from sklearn.datasets import make_classification
 from sklearn.ensemble import ExtraTreesClassifier
 
 # Build a classification task using 3 informative features
-train_data = np.load('train_examples_5000sp.npz')
+train_data = np.load('extra_feature_matrices/train_examples_5000sp.npz')
 X = train_data['inputs']
 y = train_data['targets']
 
 # Build a forest and compute the feature importances
-forest = ExtraTreesClassifier(n_estimators=250,
+forest = ExtraTreesClassifier(n_estimators=1000,
                               random_state=0)
 
 forest.fit(X, y)
@@ -26,7 +26,7 @@ for f in range(X.shape[1]):
     print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
 
 # Plot the feature importances of the forest
-LABELS = np.array(["x pos", "y pos", "size-x", "size-y", "avg R", "avg G", "avg B"])
+LABELS = np.array(["x pos", "y pos", "size-x", "size-y", "avg R", "avg G", "avg B", "var R", "var G", "var B", "avg H", "avg S", "avg V", "avg entropy", "edge freq"])
 LABELS_sorted = LABELS[indices]
 
 

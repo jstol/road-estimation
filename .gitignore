@@ -68,3 +68,5 @@ superpixel_data/
 temp/
 mrf_evaluate_results/
 best_results/
+15k_ensemble_results/
+extra_feature_matrices/
