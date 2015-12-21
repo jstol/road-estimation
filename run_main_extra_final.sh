@@ -68,8 +68,8 @@ do
 		-i "${results_dir}/predictions/${ensemble_method}${alg}_${i}sp_test.npz" \
 		-e "kit/data_road/training/divided_data/test/image_2" \
 		-o "${results_dir}/prediction_images/${i}sp/test/encoded" \
+		--generate-overlay \
 		-ov "${results_dir}/prediction_images/${i}sp/test/encoded_overlay" >/dev/null 2>&1
-		# --generate-overlay \
 
 	python kit/devkit_road/python/evaluateRoad.py  "${results_dir}/prediction_images/${i}sp/test/encoded/" "kit/data_road/training/divided_data/test" "${run_dir}/pixel_report_${start_date}.csv" "${ensemble_method}${alg}" "${params}" "test" "${i}" >> "${pixel_test_results_file}"
 
