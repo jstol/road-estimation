@@ -7,7 +7,7 @@ start_date=$(date +"%m-%d-%Y-%s")
 i=5000 # number of superpixels
 run_dir="final_test_results/${alg}"
 results_dir="${run_dir}/${param_configuration_subdir}"
-mkdir -p results_dir
+mkdir -p "final_test_results/neural_net/final/test_results"
 
 echo "====================================="
 echo "Running for ${alg} - ${params}"

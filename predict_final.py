@@ -6,6 +6,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import numpy as np
 
+def predict(test_inputs, model_name):
+		#force test inputs to be np arrays:
+		test_inputs = np.array(test_inputs)
+
+		#load model
+		mlp_model = joblib.load((model_name+'.pkl'))
+
+		#make predictions
+		test_pred = np.array(mlp_model.predict_proba(test_inputs))
+		return test_pred[:, 1]
+
 def create_dir_if_not_exists(filename):
 	if not os.path.exists(filename):
 		os.makedirs(filename)
@@ -26,7 +37,7 @@ test_data = np.load(test_data_file)
 test_X = test_data['inputs']
 
 # Predict
-test_predict = model.predict(test_X, model_file)
+test_predict = predict(test_X, model_file)
 
 # Save
 np.savez(test_prediction_file, predictions=test_pred)
