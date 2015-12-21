@@ -41,4 +41,4 @@ test_X = test_data['inputs']
 test_predict = predict(test_X, model_file)
 
 # Save
-np.savez(test_prediction_file, predictions=test_pred)
+np.savez(test_prediction_file, predictions=test_predict)
