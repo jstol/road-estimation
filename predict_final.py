@@ -31,7 +31,7 @@ test_prediction_file = "final_test_results/{0}/final/{0}_{1}sp_test.npz".format(
 # -------------------
 
 # Make any missing dirs
-create_dir_if_not_exists(test_prediction_dir)
+create_dir_if_not_exists(test_prediction_file)
 
 # Load in data
 test_data = np.load(test_data_file)
