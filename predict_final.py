@@ -7,8 +7,8 @@ import os
 import numpy as np
 
 def create_dir_if_not_exists(filename):
-	if not os.path.exists(os.path.dirname(filename)):
-		os.makedirs(os.path.dirname(filename))
+	if not os.path.exists(filename):
+		os.makedirs(filename)
 
 # THINGS TO CONFIGURE
 model = "neural_net"
