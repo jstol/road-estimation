@@ -197,23 +197,6 @@ class NeuralNetworkModel(Model):
 		train_targets = np.array(train_targets)
 
 		#unpack hyperparameters:
-		# hidden_layers_tuple = self.hyperparameters['hidden_layers_tuple'] # tuple - (#hidden_units_layer_1)
-		# activation = self.hyperparameters['activation'] #str 'logistic', 'tanh', 'relu' => appearantly tanh and relu are better
-		# optimization_alg = self.hyperparameters['optimization_alg'] #str 'l-bfg' - all data or 'adam' - batch - default 200
-		# L2_reg_alpha = self.hyperparameters['L2_reg_alpha'] #L2 regularization term
-		#learning_rate_type = self.hyperparameters['learning_rate_type'] #'constant','invscaling' - decreasing, 'adaptive' - only used for sgd
-		#random_state = self.hyperparameters['random_state'] #int - initialization
-		#learning_rate_init = self.hyperparameters['learning_rate_init'] #double
-
-		#fit model
-		#temp code
-		#hidden_layer_1 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
-		#hidden_layer_2 = mlp.Layer(type = 'Tanh', units = 10, weight_decay = 0.01)
-		#hidden_layer_3 = mlp.Layer(type = 'Tanh', units = 25, weight_decay = 0.01)
-		#output_layer = mlp.Layer(type = 'Softmax')
-
-		#list_of_layers = [hidden_layer_1, output_layer]
-
 		list_of_layers = []
 		list_of_layers_params = self.hyperparameters['list_of_layers_params']
 		for curr_layer_params in list_of_layers_params:

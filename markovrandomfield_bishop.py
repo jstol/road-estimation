@@ -11,6 +11,7 @@ from sklearn.externals import joblib
 import math
 import random
 
+#image processing
 from skimage.io import imread_collection, imread, imshow, imsave
 from skimage import img_as_float, img_as_uint
 from scipy.ndimage.filters import gaussian_filter
@@ -21,35 +22,6 @@ from scipy import ndimage as ndi
 
 from skimage import feature
 
-from skimage import data, img_as_float
-from skimage.restoration import denoise_tv_chambolle, denoise_bilateral
-
-from skimage.transform import (hough_line, hough_line_peaks,
-                               probabilistic_hough_line)
-
-from skimage.feature import canny
-from skimage import data
-
-from skimage.segmentation import random_walker
-import skimage
-
-
-from skimage.data import astronaut
-from skimage.segmentation import felzenszwalb, slic, quickshift
-from skimage.segmentation import mark_boundaries
-from skimage.util import img_as_float
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
-from skimage import data
-from skimage.filters import threshold_otsu
-from skimage.segmentation import clear_border
-from skimage.measure import label
-from skimage.morphology import closing, square
-from skimage.measure import regionprops
-from skimage.color import label2rgb
-
 
 
 class pixelmap:
@@ -57,16 +29,26 @@ class pixelmap:
 	Interface to pixelmap:
 
 	pixelmap_a = pixelmap()	:							create a new instance of pixelmap
-	pixelmap.set_conn_energy :							set the strength of the connections between pixels - 
-														this impact the relative importance of keeping the labels smooth vs. 
-														being consistent with the superpixel prediction
-	pixelmap.load_superpixel_classifier_predictions :	load pixel level predictions from superpixel classifier, 
-														need to specify height and width of image
-	pixelmap.mcmc_update:								perform 1 iteration of mcmc (iterate through every pixel), need to specify temperature
 
-	pixelmap.eval_energy:								compute the energy of the current state of pixel labels
+	pixelmap.set_conn_energy(conn_energy) :				set the strength of the connections between pixels - 
+														this impact the relative importance of keeping the labels smooth vs. 
+														being consistent with the superpixel-level prediction
+
+	pixelmap.load_superpixel_classifier_predictions
+	(pixel_lvl_predictions, height, width) :			load pixel level predictions from superpixel classifier, 
+														need to specify height and width of image
+
+	pixelmap.mcmc_update(temperature) :					perform 1 iteration of mcmc (iterate through every pixel), need to specify temperature
+
+	pixelmap.mcmc_rand_update(temperature) :			perform 1 iteration of mcmc (iterate through a random sample of pixels), need to specify temperature
+
+	pixelmap.mcmc_block_flip_update(temperature) :		perform 1 iteration of mcmc (iterate through a random sample of blocks), need to specify temperature
+
+	pixelmap.eval_energy() :							compute the energy of the current state of pixel labels
+
 
 	"""
+
 	def __init__(self):
 		self.height = None
 		self.width = None
@@ -242,7 +224,7 @@ class pixelmap:
 
 	def mcmc_one_flip(self, pixel_idx, temperature):
 		energy_change = self.one_flip_energy_change(pixel_idx)
-		prob_flip = min(1, np.exp(-temperature*energy_change))
+		prob_flip = min(1, np.exp(-float(1/temperature)*energy_change))
 
 		#pick a random number uniformly from 0 to 1, if the random number < prob_flip, then flip;
 		#otherwise don't flip
@@ -356,7 +338,7 @@ class pixelmap:
 		if (boundary_pixel_idx != None):
 			block = self.find_block(boundary_pixel_idx)
 			energy_change = self.block_flip_energy_change(block)
-			prob_flip = min(1, np.exp(-temperature*energy_change))
+			prob_flip = min(1, np.exp(-float(temperature)*energy_change))
 
 			#pick a random number uniformly from 0 to 1, if the random number < prob_flip, then flip;
 			#otherwise don't flip
