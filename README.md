@@ -14,14 +14,14 @@ We are making use of the [KITTI Vision Benchmark Suite](http://www.cvlibs.net/da
 ###### Examples:
 ---
 Original Photo:
-![encoded/um_road_000042](example-predictions/original-photo/um_road_000042.png)
+![original-photo/um_road_000042](example-predictions/original-photo/um_road_000042.png)
 Road Prediction - Brighter means higher predicted probability of being road:
 ![encoded/um_road_000042](example-predictions/encoded/um_road_000042.png)
 Road Prediction Overlayed on Original Photo:
 ![encoded-overlay/um_road_000042](example-predictions/encoded-overlay/um_road_000042.png)
 ---
 Original Photo:
-![encoded/um_road_000082](example-predictions/original-photo/um_road_000082.png)
+![original-photo/um_road_000082](example-predictions/original-photo/um_road_000082.png)
 Road Prediction - Brighter means higher predicted probability of being road:
 ![encoded/um_road_000082](example-predictions/encoded/um_road_000082.png)
 Road Prediction Overlayed on Original Photo:
